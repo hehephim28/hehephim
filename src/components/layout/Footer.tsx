@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Film, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export interface FooterProps {
@@ -21,7 +21,11 @@ const Footer: React.FC<FooterProps> = ({ className }) => {
               href="/"
               className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
             >
-              <Film className="w-8 h-8 text-red-500" />
+              <img
+                src="/logo.png"
+                alt="HeHePhim Logo"
+                className="w-8 h-8 object-contain"
+              />
               <span className="text-xl font-bold">HeHePhim</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-md">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Film, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '../ui';
 import { HeaderSearchBar } from '../features';
 import { useNavigationMetadata } from '../../hooks/useMetadata';
@@ -100,11 +100,15 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
           >
-            <Film className="w-8 h-8 text-red-500" />
+            <img
+              src="/logo.png"
+              alt="HeHePhim Logo"
+              className="w-10 h-10 object-contain"
+            />
             <span className="text-xl font-bold">HeHePhim</span>
           </Link>
 
