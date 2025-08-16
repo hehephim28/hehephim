@@ -1,0 +1,19 @@
+# Ignore cache files for Cloudflare Pages
+.next/cache/
+cache/
+**/cache/
+**/*.cache
+**/*.pack
+node_modules/
+.git/
+*.log
+
+# Ignore large Sharp image processing files
+.next/standalone/node_modules/@img/
+.next/standalone/node_modules/sharp/
+
+# Keep only essential build files
+!.next/standalone/
+!.next/static/
+!.next/server/
+!.next/*.json

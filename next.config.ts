@@ -14,6 +14,17 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // Disable webpack cache for smaller build size
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      config.cache = false;
+      // Exclude heavy image processing modules in production
+      config.externals = config.externals || [];
+      config.externals.push('sharp');
+    }
+    return config;
+  },
+  
   // Image optimization - disable for Cloudflare
   images: {
     unoptimized: true,
