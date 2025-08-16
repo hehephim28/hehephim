@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { MovieSection } from '@/components/features/MovieSection';
 import { HeroSection } from '@/components/features/HeroSection';
-import { useLatestMovies, usePhimLe, useMoviesByCountry, useMoviesByGenre } from '@/hooks/useMovies';
+import { useLatestMovies, usePhimLe, useMoviesByCountry, useMoviesByGenre, useTVShows, useHoatHinh } from '@/hooks/useMovies';
 
 export const HomePage: React.FC = () => {
   const [loadOtherSections, setLoadOtherSections] = useState(false);
@@ -22,16 +22,66 @@ export const HomePage: React.FC = () => {
   }, []);
   
   // Load other sections progressively
-  const { data: phimLeData, isLoading: loadingPhimLe } = usePhimLe({ enabled: loadOtherSections });
+  const { data: phimLeData, isLoading: loadingPhimLe } = usePhimLe({ 
+    enabled: loadOtherSections, 
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
   
-  // Movies by country
-  const { data: phimHanData, isLoading: loadingPhimHan } = useMoviesByCountry('han-quoc', { enabled: loadOtherSections, limit: 12 });
-  const { data: phimTrungData, isLoading: loadingPhimTrung } = useMoviesByCountry('trung-quoc', { enabled: loadOtherSections, limit: 12 });
-  const { data: phimMyData, isLoading: loadingPhimMy } = useMoviesByCountry('au-my', { enabled: loadOtherSections, limit: 12 });
+  // Movies by country (sorted by latest year)
+  const { data: phimHanData, isLoading: loadingPhimHan } = useMoviesByCountry('han-quoc', { 
+    enabled: loadOtherSections,
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
+  const { data: phimTrungData, isLoading: loadingPhimTrung } = useMoviesByCountry('trung-quoc', { 
+    enabled: loadOtherSections,
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
+  const { data: phimMyData, isLoading: loadingPhimMy } = useMoviesByCountry('au-my', { 
+    enabled: loadOtherSections,
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
+  const { data: phimVietData, isLoading: loadingPhimViet } = useMoviesByCountry('viet-nam', { 
+    enabled: loadOtherSections,
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
   
-  // Movies by genre  
-  const { data: phimTinhCamData, isLoading: loadingPhimTinhCam } = useMoviesByGenre('tinh-cam', { enabled: loadOtherSections, limit: 12 });
-  const { data: phimKinhDiData, isLoading: loadingPhimKinhDi } = useMoviesByGenre('kinh-di', { enabled: loadOtherSections, limit: 12 });
+  // Movies by genre (sorted by latest year)
+  const { data: phimTinhCamData, isLoading: loadingPhimTinhCam } = useMoviesByGenre('tinh-cam', { 
+    enabled: loadOtherSections,
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
+  const { data: phimKinhDiData, isLoading: loadingPhimKinhDi } = useMoviesByGenre('kinh-di', { 
+    enabled: loadOtherSections,
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
+
+  // TV Shows and Animation (sorted by latest year)
+  const { data: tvShowsData, isLoading: loadingTVShows } = useTVShows({ 
+    enabled: loadOtherSections, 
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
+  const { data: hoatHinhData, isLoading: loadingHoatHinh } = useHoatHinh({ 
+    enabled: loadOtherSections, 
+    sortField: 'year', 
+    sortType: 'desc', 
+    limit: 12 
+  });
 
   // Get featured movie from latest movies for hero section
   const featuredMovie = latestMovies?.items?.[0];
@@ -46,17 +96,6 @@ export const HomePage: React.FC = () => {
 
         {/* Movie Sections Container */}
         <div className="container mx-auto px-4 py-8 space-y-12">
-          {/* Latest Movies Section */}
-          <MovieSection
-            title="🆕 Phim Mới Cập Nhật"
-            subtitle="Những bộ phim được cập nhật gần đây nhất"
-            movies={latestMovies?.items?.slice(1, 13) || []} // Skip first movie (used in hero)
-            isLoading={loadingLatest}
-            viewAllHref="/danh-sach/phim-moi-cap-nhat"
-            viewAllLabel="Xem tất cả"
-            layout="carousel"
-          />
-
           {/* Movies Section */}
           <MovieSection
             title="🎬 Phim Lẻ Mới"
@@ -101,6 +140,17 @@ export const HomePage: React.FC = () => {
             layout="carousel"
           />
 
+          {/* Vietnamese Movies Section */}
+          <MovieSection
+            title="🇻🇳 Phim Việt Mới"
+            subtitle="Những bộ phim Việt Nam mới nhất và chất lượng"
+            movies={phimVietData?.items?.slice(0, 12) || []}
+            isLoading={loadingPhimViet}
+            viewAllHref="/quoc-gia/viet-nam"
+            viewAllLabel="Xem tất cả"
+            layout="carousel"
+          />
+
           {/* Romance Movies Section */}
           <MovieSection
             title="💕 Phim Tình Cảm Mới"
@@ -119,6 +169,28 @@ export const HomePage: React.FC = () => {
             movies={phimKinhDiData?.items?.slice(0, 12) || []}
             isLoading={loadingPhimKinhDi}
             viewAllHref="/the-loai/kinh-di"
+            viewAllLabel="Xem tất cả"
+            layout="carousel"
+          />
+
+          {/* TV Shows Section */}
+          <MovieSection
+            title="📺 TV Shows Mới"
+            subtitle="Những bộ TV Shows mới nhất và đáng xem"
+            movies={tvShowsData?.items?.slice(0, 12) || []}
+            isLoading={loadingTVShows}
+            viewAllHref="/danh-sach/tv-shows"
+            viewAllLabel="Xem tất cả"
+            layout="carousel"
+          />
+
+          {/* Animation Section */}
+          <MovieSection
+            title="🎭 Hoạt Hình Mới"
+            subtitle="Những bộ phim hoạt hình mới nhất và thú vị"
+            movies={hoatHinhData?.items?.slice(0, 12) || []}
+            isLoading={loadingHoatHinh}
+            viewAllHref="/danh-sach/hoat-hinh"
             viewAllLabel="Xem tất cả"
             layout="carousel"
           />

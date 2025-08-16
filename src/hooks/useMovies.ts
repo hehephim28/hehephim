@@ -30,12 +30,13 @@ export function useMoviesByCategory(filters: MovieFilters) {
  */
 export function useMoviesByGenre(
   categorySlug: string, 
-  params: Omit<MovieFilters, 'type' | 'category'> = {}
+  params: Omit<MovieFilters, 'type' | 'category'> & { enabled?: boolean } = {}
 ) {
+  const { enabled = true, ...movieParams } = params;
   return useQuery({
-    queryKey: queryKeys.categories.bySlug(categorySlug, params),
-    queryFn: () => movieService.getMoviesByGenre(categorySlug, params),
-    enabled: !!categorySlug,
+    queryKey: queryKeys.categories.bySlug(categorySlug, movieParams),
+    queryFn: () => movieService.getMoviesByGenre(categorySlug, movieParams),
+    enabled: enabled && !!categorySlug,
   });
 }
 
@@ -44,12 +45,13 @@ export function useMoviesByGenre(
  */
 export function useMoviesByCountry(
   countrySlug: string, 
-  params: Omit<MovieFilters, 'country'> = {}
+  params: Omit<MovieFilters, 'country'> & { enabled?: boolean } = {}
 ) {
+  const { enabled = true, ...movieParams } = params;
   return useQuery({
-    queryKey: queryKeys.countries.bySlug(countrySlug, params),
-    queryFn: () => movieService.getMoviesByCountry(countrySlug, params),
-    enabled: !!countrySlug,
+    queryKey: queryKeys.countries.bySlug(countrySlug, movieParams),
+    queryFn: () => movieService.getMoviesByCountry(countrySlug, movieParams),
+    enabled: enabled && !!countrySlug,
   });
 }
 
