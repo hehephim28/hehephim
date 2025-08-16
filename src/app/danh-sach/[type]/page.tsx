@@ -28,7 +28,7 @@ export async function generateMetadata(
           description: seoData.descriptionHead,
           type: seoData.og_type as any,
           images: seoData.og_image?.map(img => ({
-            url: `https://img.ophim.live${img}`,
+            url: `https://phimimg.com${img}`,
             width: 800,
             height: 600,
           })) || [],
@@ -37,7 +37,7 @@ export async function generateMetadata(
           card: 'summary_large_image',
           title: seoData.titleHead,
           description: seoData.descriptionHead,
-          images: seoData.og_image?.map(img => `https://img.ophim.live${img}`) || [],
+          images: seoData.og_image?.map(img => `https://phimimg.com${img}`) || [],
         },
         alternates: {
           canonical: `/danh-sach/${type}`,

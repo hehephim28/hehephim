@@ -21,11 +21,11 @@ export const metadata: Metadata = {
       { url: '/logo.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/logo.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/favicon.png',
+    shortcut: '/logo.png',
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thaihoc285.site'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online'),
   openGraph: {
     title: "Hehe Phim - Xem Phim Online Miễn Phí",
     description: "Website xem phim online miễn phí với chất lượng HD",
