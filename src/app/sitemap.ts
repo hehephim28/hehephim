@@ -1,9 +1,6 @@
 import { MetadataRoute } from 'next';
 import { movieService } from '@/services/movieService';
 
-// Required for static export
-export const dynamic = 'force-static';
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Get domain from environment or use default
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online';
@@ -107,32 +104,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const currentYear = new Date().getFullYear();
     const moviePages: MetadataRoute.Sitemap = [];
 
-    // Get movies from each target country for recent years
-    for (const country of targetCountries) {
+    // Get movies from each target country for recent years (with timeout)
+    const fetchPromises = targetCountries.map(async (country) => {
       try {
-        // Get movies from this country, prioritize recent years (current year and previous year)
-        for (let year = currentYear; year >= currentYear - 1; year--) {
-          const countryMovies = await movieService.getMoviesByCountry(country.slug, { 
+        // Only fetch current year to reduce API calls
+        const countryMovies = await Promise.race([
+          movieService.getMoviesByCountry(country.slug, { 
             page: 1, 
-            limit: Math.ceil(country.limit / 2), // Split limit across 2 years
-            year: year
-          });
-          
-          if (countryMovies.items) {
-            const countryMoviePages = countryMovies.items.map(movie => ({
-              url: `${baseUrl}/phim/${movie.slug}`,
-              lastModified: new Date(movie.modified?.time || Date.now()),
-              changeFrequency: 'weekly' as const,
-              priority: year === currentYear ? 0.8 : 0.6, // Higher priority for current year
-            }));
-            moviePages.push(...countryMoviePages);
-          }
+            limit: country.limit,
+            year: currentYear
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 10000)
+          )
+        ]) as any;
+        
+        if (countryMovies.items) {
+          return countryMovies.items.map((movie: any) => ({
+            url: `${baseUrl}/phim/${movie.slug}`,
+            lastModified: new Date(movie.modified?.time || Date.now()),
+            changeFrequency: 'weekly' as const,
+            priority: 0.7,
+          }));
         }
-      } catch (countryError) {
-        console.error(`Error fetching movies for country ${country.slug}:`, countryError);
-        continue;
+        return [];
+      } catch (error) {
+        console.error(`Error fetching movies for country ${country.slug}:`, error);
+        return [];
       }
-    }
+    });
+
+    // Wait for all promises with timeout
+    const results = await Promise.allSettled(fetchPromises);
+    results.forEach(result => {
+      if (result.status === 'fulfilled') {
+        moviePages.push(...result.value);
+      }
+    });
 
     // Fallback: if no movies found, get latest movies and filter manually
     if (moviePages.length === 0) {

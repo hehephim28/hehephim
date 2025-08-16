@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Cloudflare Pages compatibility
+  // Use standalone for Cloudflare Pages with Next.js runtime
   output: 'standalone',
   
   // Skip ESLint during build for deployment
