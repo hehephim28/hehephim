@@ -1,8 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, ChevronDown } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+  Settings,
+  ChevronDown,
+  RotateCcw,
+  Loader2,
+  AlertCircle
+} from 'lucide-react';
 import Hls from 'hls.js';
 import { Button } from './Button';
 import { cn } from '../../utils/cn';
+import './VideoPlayer.css';
 
 interface VideoPlayerProps {
   embedUrl?: string;
@@ -39,6 +52,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showCenterButton, setShowCenterButton] = useState(true);
   const [isDraggingProgress, setIsDraggingProgress] = useState(false);
   const [draggedTime, setDraggedTime] = useState(0);
+  const [buffered, setBuffered] = useState(0);
+
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [showTimeTooltip, setShowTimeTooltip] = useState(false);
+  const [tooltipTime, setTooltipTime] = useState(0);
+  const [tooltipPosition, setTooltipPosition] = useState(0);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use m3u8 URL directly instead of embed
@@ -133,7 +154,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
 
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
+      // Don't update currentTime while dragging to prevent jumping
+      if (!isDraggingProgress) {
+        setCurrentTime(video.currentTime);
+      }
     };
 
     const handlePlay = () => {
@@ -157,6 +181,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsLoading(false);
     };
 
+    const handleProgress = () => {
+      if (video.buffered.length > 0) {
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+        const duration = video.duration;
+        if (duration > 0) {
+          setBuffered((bufferedEnd / duration) * 100);
+        }
+      }
+    };
+
+    const handleRateChange = () => {
+      setPlaybackRate(video.playbackRate);
+    };
+
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('play', handlePlay);
@@ -164,6 +202,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.addEventListener('volumechange', handleVolumeChange);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('progress', handleProgress);
+    video.addEventListener('ratechange', handleRateChange);
 
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
@@ -173,8 +213,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('volumechange', handleVolumeChange);
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('progress', handleProgress);
+      video.removeEventListener('ratechange', handleRateChange);
     };
-  }, []);
+  }, [isDraggingProgress]);
 
   // Auto-hide controls after inactivity
   const resetControlsTimeout = () => {
@@ -217,13 +259,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
   }, [isPlaying]);
 
-  // Close quality menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showQualityMenu && 
-          !(event.target as Element)?.closest('.quality-menu') &&
-          !(event.target as Element)?.closest('.quality-button')) {
+      const target = event.target as Element;
+
+      if (showQualityMenu &&
+          !target?.closest('.quality-menu') &&
+          !target?.closest('.quality-button')) {
         setShowQualityMenu(false);
+      }
+
+      if (showSpeedMenu &&
+          !target?.closest('.speed-menu') &&
+          !target?.closest('.speed-button')) {
+        setShowSpeedMenu(false);
       }
     };
 
@@ -231,7 +281,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showQualityMenu]);
+  }, [showQualityMenu, showSpeedMenu]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -362,10 +412,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!video) return;
 
     const newTime = parseFloat(e.target.value);
-    // Only seek if not dragging (to prevent conflict with drag logic)
+    setDraggedTime(newTime);
+
+    // Always seek immediately for responsive feedback
+    video.currentTime = newTime;
+  };
+
+  // Progress bar hover handler
+  const handleProgressMouseMove = (e: React.MouseEvent<HTMLInputElement>) => {
+    if (!duration) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const time = percent * duration;
+    const position = (e.clientX - rect.left);
+
+    setTooltipTime(time);
+    setTooltipPosition(position);
+    setShowTimeTooltip(true);
+  };
+
+  const handleProgressMouseLeave = () => {
     if (!isDraggingProgress) {
-      video.currentTime = newTime;
-      setDraggedTime(newTime);
+      setShowTimeTooltip(false);
     }
   };
 
@@ -373,12 +442,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleProgressMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
     e.preventDefault();
     setIsDraggingProgress(true);
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const newTime = percent * duration;
+    const position = (e.clientX - rect.left);
+
     setDraggedTime(newTime);
-    
+    setTooltipTime(newTime);
+    setTooltipPosition(position);
+    setShowTimeTooltip(true);
+
     // Immediately seek to new position
     const video = videoRef.current;
     if (video) {
@@ -390,15 +464,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!isDraggingProgress) return;
-      
+
       const progressBar = document.querySelector('.progress-bar') as HTMLInputElement;
       if (!progressBar) return;
-      
+
       const rect = progressBar.getBoundingClientRect();
       const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       const newTime = percent * duration;
+      const position = (e.clientX - rect.left);
+
       setDraggedTime(newTime);
-      
+      setTooltipTime(newTime);
+      setTooltipPosition(position);
+
       // Update video time in real-time while dragging
       const video = videoRef.current;
       if (video) {
@@ -409,7 +487,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleGlobalMouseUp = () => {
       if (isDraggingProgress) {
         setIsDraggingProgress(false);
-        // Final time is already set during dragging, no need to set again
+        setShowTimeTooltip(false);
+        // Sync currentTime with draggedTime when drag ends
+        const video = videoRef.current;
+        if (video) {
+          setCurrentTime(video.currentTime);
+        }
       }
     };
 
@@ -481,6 +564,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
 
+  const changePlaybackRate = (rate: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.playbackRate = rate;
+    setPlaybackRate(rate);
+    setShowSpeedMenu(false);
+  };
+
+
+
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time % 3600) / 60);
@@ -546,14 +640,25 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   if (error) {
     return (
       <div className={cn(
-        "relative w-full bg-black rounded-lg overflow-hidden",
-        "aspect-video flex items-center justify-center",
+        "relative w-full bg-gradient-to-br from-gray-900 to-black rounded-lg overflow-hidden",
+        "aspect-video flex items-center justify-center border border-red-500/20",
         className
       )}>
-        <div className="text-center text-white">
-          <div className="text-red-500 mb-4">⚠️</div>
-          <p className="text-lg mb-2">Lỗi phát video</p>
-          <p className="text-sm text-gray-400">{error}</p>
+        <div className="text-center text-white max-w-md mx-auto p-6">
+          <div className="bg-red-500/20 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-red-400" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Không thể phát video</h3>
+          <p className="text-gray-400 text-sm mb-4">{error}</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="bg-red-600 hover:bg-red-700 text-white border-0"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Thử lại
+          </Button>
         </div>
       </div>
     );
@@ -604,9 +709,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-black/60 backdrop-blur-sm rounded-full p-4">
-            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
+          <Loader2 className="loading-icon w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-white animate-spin" />
         </div>
       )}
 
@@ -649,23 +752,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         )}
 
-        {/* Center play button - only show when paused and controls not hovered */}
+        {/* Center play button - only show when paused */}
         {!isPlaying && (
-          <div 
+          <div
             className={cn(
-              "absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300",
-              showCenterButton ? "opacity-100" : "opacity-0"
+              "absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-500",
+              showCenterButton ? "opacity-100 scale-100" : "opacity-0 scale-95"
             )}
-            onMouseEnter={() => setShowCenterButton(false)}
+            onClick={togglePlay}
           >
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={togglePlay}
-              className="text-white bg-black/50 hover:bg-black/70 rounded-full p-3 sm:p-4 md:p-6 backdrop-blur-sm border border-white/20 pointer-events-auto transform hover:scale-110 transition-transform duration-200"
-            >
-              <Play className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 ml-0.5 sm:ml-1" />
-            </Button>
+            <Play className="center-play-icon w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 text-white pointer-events-auto cursor-pointer hover:scale-110 transition-all duration-300" />
           </div>
         )}
 
@@ -702,7 +798,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           }}
         >
           {/* Progress bar */}
-          <div className="group">
+          <div className="group relative">
+            {/* Time tooltip */}
+            {showTimeTooltip && (
+              <div
+                className="time-tooltip absolute bottom-full mb-2 px-3 py-1.5 bg-black/90 text-white text-xs rounded-md pointer-events-none z-10 transform -translate-x-1/2 transition-opacity duration-200"
+                style={{
+                  left: `${Math.max(24, Math.min(tooltipPosition, window.innerWidth - 48))}px` // Keep tooltip within bounds
+                }}
+              >
+                {formatTime(tooltipTime)}
+              </div>
+            )}
+
+            {/* Buffer bar background */}
+            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+              {/* Buffered progress */}
+              <div
+                className="h-full bg-white/40 transition-all duration-300"
+                style={{ width: `${buffered}%` }}
+              />
+            </div>
+
+            {/* Main progress bar */}
             <input
               type="range"
               min="0"
@@ -710,57 +828,69 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               value={isDraggingProgress ? draggedTime : currentTime}
               onChange={handleSeek}
               onMouseDown={handleProgressMouseDown}
+              onMouseMove={handleProgressMouseMove}
+              onMouseLeave={handleProgressMouseLeave}
               className={cn(
-                "progress-bar w-full h-0.5 sm:h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer group-hover:h-1 sm:group-hover:h-2 transition-all duration-200",
+                "progress-bar absolute top-0 w-full h-1 bg-transparent rounded-full appearance-none cursor-pointer group-hover:h-1.5 transition-all duration-200",
                 isDraggingProgress && "dragging"
               )}
               style={{
-                background: `linear-gradient(to right, #e50914 0%, #e50914 ${((isDraggingProgress ? draggedTime : currentTime) / duration) * 100}%, rgba(255,255,255,0.3) ${((isDraggingProgress ? draggedTime : currentTime) / duration) * 100}%, rgba(255,255,255,0.3) 100%)`
+                background: `linear-gradient(to right, #e50914 0%, #e50914 ${((isDraggingProgress ? draggedTime : currentTime) / duration) * 100}%, transparent ${((isDraggingProgress ? draggedTime : currentTime) / duration) * 100}%, transparent 100%)`
               }}
             />
-            <div className="flex justify-between text-xs text-gray-300 mt-1">
-              <span className="text-xs sm:text-sm">{formatTime(isDraggingProgress ? draggedTime : currentTime)}</span>
-              <span className="text-xs sm:text-sm">{formatTime(duration)}</span>
+
+            {/* Time display */}
+            <div className="flex justify-between text-xs text-gray-300 mt-2">
+              <span className="text-xs sm:text-sm font-medium">
+                {formatTime(isDraggingProgress ? draggedTime : currentTime)}
+              </span>
+              <span className="text-xs sm:text-sm text-gray-400">
+                {formatTime(duration)}
+              </span>
             </div>
           </div>
 
           {/* Control buttons row */}
           <div className="flex items-center justify-between">
             {/* Left controls */}
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Play/Pause */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={togglePlay}
-                className="text-white hover:bg-white/20 p-1 sm:p-1.5 md:p-2 rounded-full"
+                className="text-white hover:bg-white/20 p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110 bg-white/10"
               >
                 {isPlaying ? (
-                  <Pause className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                  <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
                 ) : (
-                  <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ml-0.5" />
+                  <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
                 )}
               </Button>
 
               {/* Volume controls */}
-              <div className="flex items-center gap-1 sm:gap-2 group">
+              <div
+                className="flex items-center gap-2 group relative"
+                onMouseEnter={() => setShowVolumeSlider(true)}
+                onMouseLeave={() => setShowVolumeSlider(false)}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={toggleMute}
-                  className="text-white hover:bg-white/20 p-1 sm:p-1.5 md:p-2 rounded-full"
+                  className="text-white hover:bg-white/20 p-2 rounded-full transition-all duration-200"
                 >
                   {isMuted || volume === 0 ? (
-                    <VolumeX className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                    <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
                   ) : (
-                    <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                    <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
                 </Button>
 
-                {/* Volume slider - always visible on mobile, hover on desktop */}
+                {/* Volume slider */}
                 <div className={cn(
-                  "transition-opacity duration-200 overflow-hidden flex items-center",
-                  isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  "transition-all duration-300 overflow-hidden flex items-center",
+                  isMobile || showVolumeSlider ? "opacity-100 w-20 sm:w-24" : "opacity-0 w-0"
                 )}>
                   <input
                     type="range"
@@ -771,12 +901,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     onChange={handleVolumeChange}
                     onTouchStart={handleVolumeTouchStart}
                     onTouchMove={handleVolumeTouchMove}
-                    className="volume-slider w-16 sm:w-20 md:w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                    className="volume-slider w-full h-1 bg-white/30 rounded-full appearance-none cursor-pointer"
                     style={{
                       background: `linear-gradient(to right, #e50914 0%, #e50914 ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.3) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.3) 100%)`
                     }}
                   />
                 </div>
+
+                {/* Volume percentage tooltip */}
+                {(showVolumeSlider || isMobile) && (
+                  <span className="text-xs text-gray-300 min-w-[2rem] text-center">
+                    {Math.round((isMuted ? 0 : volume) * 100)}%
+                  </span>
+                )}
               </div>
 
               {/* Time display - Full on desktop, compact on mobile */}
@@ -785,16 +922,51 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
             {/* Right controls */}
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* Quality selector */}
-              {qualities.length > 1 && (
+              {/* Playback speed */}
+              <div className="relative">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowQualityMenu(!showQualityMenu)}
-                  className="quality-button text-white hover:bg-white/20 px-2 py-1 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium"
+                  onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                  className="speed-button text-white hover:bg-white/20 px-2 py-1 rounded text-xs sm:text-sm font-medium min-w-[2.5rem]"
                 >
-                  {currentQuality === 'auto' ? 'HD' : currentQuality}
+                  {playbackRate}x
                 </Button>
+
+                {/* Speed menu */}
+                {showSpeedMenu && (
+                  <div className="speed-menu absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur-sm rounded-lg py-2 min-w-[80px] border border-gray-600 z-50">
+                    <div className="px-3 py-1 text-xs font-medium text-gray-300 border-b border-gray-600">
+                      Tốc độ
+                    </div>
+                    {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                      <button
+                        key={rate}
+                        onClick={() => changePlaybackRate(rate)}
+                        className={cn(
+                          "block w-full text-left px-3 py-1 text-xs text-white hover:bg-white/10 transition-colors",
+                          playbackRate === rate && "bg-red-600 text-white"
+                        )}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Quality selector */}
+              {qualities.length > 1 && (
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowQualityMenu(!showQualityMenu)}
+                    className="quality-button text-white hover:bg-white/20 px-2 py-1 rounded text-xs sm:text-sm font-medium"
+                  >
+                    {currentQuality === 'auto' ? 'HD' : currentQuality}
+                  </Button>
+                </div>
               )}
 
               {/* Fullscreen */}
@@ -802,12 +974,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={toggleFullscreen}
-                className="text-white hover:bg-white/20 p-1 sm:p-1.5 md:p-2 rounded-full"
+                className="text-white hover:bg-white/20 p-2 rounded-full transition-all duration-200 hover:scale-110"
               >
                 {isFullscreen ? (
-                  <Minimize className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                  <Minimize className="w-4 h-4 sm:w-5 sm:h-5" />
                 ) : (
-                  <Maximize className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                  <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
               </Button>
             </div>
