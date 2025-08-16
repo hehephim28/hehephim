@@ -127,7 +127,6 @@ export const BrowseGenreClient: React.FC<BrowseGenreClientProps> = ({
   };
 
   const breadcrumbItems = [
-    { label: 'Trang chủ', href: '/' },
     { label: 'Thể loại', href: '/the-loai' },
     { label: pageTitle, href: `/the-loai/${genre}`, isCurrent: true }
   ];

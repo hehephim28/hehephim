@@ -149,7 +149,6 @@ export const SearchPageClient: React.FC<SearchPageClientProps> = ({
   const years = Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i);
 
   const breadcrumbItems = [
-    { label: 'Trang chủ', href: '/' },
     { label: 'Tìm kiếm', href: '/tim-kiem', isCurrent: !keyword },
     ...(keyword ? [{ label: `"${keyword}"`, href: `/tim-kiem?keyword=${keyword}`, isCurrent: true }] : [])
   ];

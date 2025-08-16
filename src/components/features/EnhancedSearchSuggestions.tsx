@@ -149,8 +149,18 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
         </div>
         
         {/* Suggestions List */}
-        <div className="space-y-1 max-h-80 overflow-y-auto">
-          {type === 'movies' 
+        <div className={cn(
+          "space-y-1 max-h-80 overflow-y-auto",
+          // Custom scrollbar styles
+          "[&::-webkit-scrollbar]:w-1.5",
+          "[&::-webkit-scrollbar-track]:bg-slate-700/30",
+          "[&::-webkit-scrollbar-thumb]:bg-slate-600/60",
+          "[&::-webkit-scrollbar-thumb]:rounded-full",
+          "[&::-webkit-scrollbar-thumb:hover]:bg-slate-500/80",
+          // Firefox scrollbar
+          "scrollbar-thin scrollbar-track-slate-700/30 scrollbar-thumb-slate-600/60"
+        )}>
+          {type === 'movies'
             ? (items as Movie[]).map(renderMovieSuggestion)
             : (items as string[]).map(renderTextSuggestion)
           }

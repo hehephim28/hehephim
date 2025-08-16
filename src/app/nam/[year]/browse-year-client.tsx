@@ -67,7 +67,6 @@ export const BrowseYearClient: React.FC<BrowseYearClientProps> = ({
   };
 
   const breadcrumbItems = [
-    { label: 'Trang chủ', href: '/' },
     { label: 'Năm phát hành', href: '/nam' },
     { label: pageTitle, href: `/nam/${year}`, isCurrent: true }
   ];

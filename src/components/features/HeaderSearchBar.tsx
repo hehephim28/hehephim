@@ -179,7 +179,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             data={displayData}
             onSuggestionClick={handleSuggestionClick}
             onHistoryRemove={(query) => removeFromHistory(query)}
-            showImages={false} // Header search - compact mode
+            showImages={true} // Show images like search page
           />
         </div>
       )}

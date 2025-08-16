@@ -135,14 +135,13 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
   };
 
   const breadcrumbItems = [
-    { label: 'Trang chủ', href: '/' },
-    { 
-      label: movie.type === 'single' ? 'Phim Lẻ' : 
-             movie.type === 'series' ? 'Phim Bộ' : 
+    {
+      label: movie.type === 'single' ? 'Phim Lẻ' :
+             movie.type === 'series' ? 'Phim Bộ' :
              movie.type === 'hoathinh' ? 'Hoạt Hình' : 'Phim',
       href: `/danh-sach/${
-        movie.type === 'single' ? 'phim-le' : 
-        movie.type === 'series' ? 'phim-bo' : 
+        movie.type === 'single' ? 'phim-le' :
+        movie.type === 'series' ? 'phim-bo' :
         movie.type === 'hoathinh' ? 'hoat-hinh' : 'phim-le'
       }`
     },

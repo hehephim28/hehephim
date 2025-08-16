@@ -155,7 +155,6 @@ export const BrowsePageClient: React.FC<BrowsePageClientProps> = ({
 
   // Breadcrumb items
   const breadcrumbItems = [
-    { label: 'Trang chủ', href: '/' },
     { label: pageTitle, href: `/danh-sach/${type}`, isCurrent: true }
   ];
 

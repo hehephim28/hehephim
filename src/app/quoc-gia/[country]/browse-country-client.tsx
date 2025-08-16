@@ -127,7 +127,6 @@ export const BrowseCountryClient: React.FC<BrowseCountryClientProps> = ({
   };
 
   const breadcrumbItems = [
-    { label: 'Trang chủ', href: '/' },
     { label: 'Quốc gia', href: '/quoc-gia' },
     { label: pageTitle, href: `/quoc-gia/${country}`, isCurrent: true }
   ];
