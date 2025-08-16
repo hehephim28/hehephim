@@ -239,6 +239,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const video = videoRef.current;
       if (!video) return;
 
+      // Check if user is typing in an input field
+      const activeElement = document.activeElement;
+      const isTyping = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        (activeElement as HTMLElement).isContentEditable ||
+        (activeElement as HTMLElement).contentEditable === 'true'
+      );
+
+      // Don't handle shortcuts if user is typing
+      if (isTyping) return;
+
       switch (e.code) {
         case 'Space':
           e.preventDefault();
