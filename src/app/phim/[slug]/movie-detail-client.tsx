@@ -28,11 +28,12 @@ import {
   useFavorites,
   useTrackMovieView 
 } from '@/hooks/useMovieDetails';
-import { 
-  getOptimizedImageUrl, 
+import {
+  getOptimizedImageUrl,
   formatYear,
   getQualityBadgeColor,
-  getLanguageBadgeColor 
+  getLanguageBadgeColor,
+  decodeHtmlEntities
 } from '@/utils/helpers';
 import { cn } from '@/utils/cn';
 
@@ -145,7 +146,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
         movie.type === 'hoathinh' ? 'hoat-hinh' : 'phim-le'
       }`
     },
-    { label: movie.name, href: `/phim/${movie.slug}`, isCurrent: true }
+    { label: decodeHtmlEntities(movie.name), href: `/phim/${movie.slug}`, isCurrent: true }
   ];
 
   return (
@@ -211,11 +212,11 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                 {/* Title */}
                 <div className="space-y-2">
                   <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight">
-                    {movie.name}
+                    {decodeHtmlEntities(movie.name)}
                   </h1>
                   {movie.origin_name && movie.origin_name !== movie.name && (
                     <h2 className="text-xl lg:text-2xl text-gray-300 font-medium">
-                      {movie.origin_name}
+                      {decodeHtmlEntities(movie.origin_name)}
                     </h2>
                   )}
                 </div>

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { Play } from 'lucide-react';
 import type { Movie } from '../../types/movie';
-import { 
-  getOptimizedImageUrl
+import {
+  getOptimizedImageUrl,
+  decodeHtmlEntities
 } from '../../utils/helpers';
 import { cn } from '../../utils/cn';
 
@@ -70,11 +71,11 @@ const MovieCard: React.FC<MovieCardProps> = ({
             'line-clamp-2',
             sizes[size].title
           )}>
-            {movie.name}
+            {decodeHtmlEntities(movie.name)}
           </h4>
           {movie.origin_name && movie.origin_name !== movie.name && (
             <p className="text-slate-400 text-xs mt-1 line-clamp-1">
-              {movie.origin_name}
+              {decodeHtmlEntities(movie.origin_name)}
             </p>
           )}
         </div>

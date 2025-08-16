@@ -89,6 +89,30 @@ export const generateSearchUrl = (keyword: string, filters?: Record<string, any>
 };
 
 /**
+ * Decode HTML entities in text
+ */
+export const decodeHtmlEntities = (text: string): string => {
+  if (!text) return text;
+
+  const entityMap: Record<string, string> = {
+    '&#039;': "'",
+    '&quot;': '"',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&nbsp;': ' ',
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#x60;': '`',
+    '&#x3D;': '=',
+  };
+
+  return text.replace(/&#?\w+;/g, (entity) => {
+    return entityMap[entity] || entity;
+  });
+};
+
+/**
  * Truncate text with ellipsis
  */
 export const truncateText = (text: string, maxLength: number): string => {

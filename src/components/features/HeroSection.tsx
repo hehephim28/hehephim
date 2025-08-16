@@ -4,7 +4,7 @@ import type { Movie } from '../../types/movie';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Play, Info, Star, Calendar, Globe } from 'lucide-react';
-import { getOptimizedImageUrl, truncateText, formatYear } from '../../utils/helpers';
+import { getOptimizedImageUrl, truncateText, formatYear, decodeHtmlEntities } from '../../utils/helpers';
 import { cn } from '../../utils/cn';
 
 interface HeroSectionProps {
@@ -78,18 +78,18 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ movie, className }) =>
           <div className="lg:col-span-9 space-y-6">
             {/* Movie Title */}
             <div>
-              <h1 
+              <h1
                 className="text-4xl lg:text-6xl font-bold text-white mb-2 drop-shadow-lg cursor-pointer hover:text-red-400 transition-colors duration-300"
                 onClick={handleWatchNow}
               >
-                {movie.name}
+                {decodeHtmlEntities(movie.name)}
               </h1>
               {movie.origin_name && movie.origin_name !== movie.name && (
-                <h2 
+                <h2
                   className="text-xl lg:text-2xl text-gray-300 font-medium cursor-pointer hover:text-white transition-colors duration-300"
                   onClick={handleWatchNow}
                 >
-                  {movie.origin_name}
+                  {decodeHtmlEntities(movie.origin_name)}
                 </h2>
               )}
             </div>

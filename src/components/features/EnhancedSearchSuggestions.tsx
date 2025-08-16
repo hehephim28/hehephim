@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Search, Clock, TrendingUp, X, Star, Calendar, Film } from 'lucide-react';
 import { Button } from '../ui';
 import { cn } from '../../utils/cn';
+import { decodeHtmlEntities } from '../../utils/helpers';
 import type { Movie } from '../../types/movie';
 
 export interface SuggestionData {
@@ -60,7 +61,7 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
       {/* Movie Info */}
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-medium text-white truncate mb-1">
-          {movie.name}
+          {decodeHtmlEntities(movie.name)}
         </h4>
         <div className="flex items-center gap-2 text-xs text-slate-400">
           {movie.year && (
@@ -82,7 +83,7 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
         </div>
         {movie.origin_name && movie.origin_name !== movie.name && (
           <p className="text-xs text-slate-500 truncate mt-1">
-            {movie.origin_name}
+            {decodeHtmlEntities(movie.origin_name)}
           </p>
         )}
       </div>
