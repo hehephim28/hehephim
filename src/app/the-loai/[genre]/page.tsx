@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BrowseGenreClient } from './browse-genre-client';
+import { movieService } from '@/services/movieService';
 
 interface GenrePageProps {
   params: Promise<{ genre: string }>;
@@ -10,6 +11,42 @@ export async function generateMetadata(
   { params }: GenrePageProps
 ): Promise<Metadata> {
   const { genre } = await params;
+
+  try {
+    // Try to get SEO data from API
+    const response = await movieService.getMoviesByGenre(genre, { page: 1, limit: 1 });
+    const seoData = response.data?.seoOnPage;
+
+    if (seoData) {
+      return {
+        title: seoData.titleHead,
+        description: seoData.descriptionHead,
+        openGraph: {
+          title: seoData.titleHead,
+          description: seoData.descriptionHead,
+          type: seoData.og_type as any,
+          images: seoData.og_image?.map(img => ({
+            url: `https://img.ophim.live${img}`,
+            width: 800,
+            height: 600,
+          })) || [],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: seoData.titleHead,
+          description: seoData.descriptionHead,
+          images: seoData.og_image?.map(img => `https://img.ophim.live${img}`) || [],
+        },
+        alternates: {
+          canonical: `/the-loai/${genre}`,
+        },
+      };
+    }
+  } catch (error) {
+    console.error('Failed to fetch SEO data for genre:', genre, error);
+  }
+
+  // Fallback to static metadata
   const title = `Phim thể loại ${genre}`;
   const description = `Danh sách phim thể loại ${genre} mới nhất, chất lượng HD. Xem phim online miễn phí.`;
 

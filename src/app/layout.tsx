@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://hehephim.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thaihoc285.site'),
   openGraph: {
     title: "Hehe Phim - Xem Phim Online Miễn Phí",
     description: "Website xem phim online miễn phí với chất lượng HD",

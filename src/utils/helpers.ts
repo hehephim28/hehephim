@@ -20,18 +20,20 @@ export const formatEpisodeCurrent = (episodeCurrent: string): string => {
 };
 
 /**
- * Get optimized image URL 
+ * Get optimized image URL with WebP conversion
  */
 export const getOptimizedImageUrl = (originalUrl: string): string => {
   if (!originalUrl) return '';
-  
-  // If it's already a full URL, return as is
-  if (originalUrl.startsWith('http')) {
-    return originalUrl;
-  }
-  
+
+  let fullUrl = originalUrl;
+
   // If it's a relative path from the API, construct full URL using phimimg.com domain
-  return `https://phimimg.com/${originalUrl}`;
+  if (!originalUrl.startsWith('http')) {
+    fullUrl = `https://phimimg.com/${originalUrl}`;
+  }
+
+  // Use PhimAPI's WebP conversion service for better performance and SEO
+  return `https://phimapi.com/image.php?url=${encodeURIComponent(fullUrl)}`;
 };
 
 /**

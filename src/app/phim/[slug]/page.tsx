@@ -3,6 +3,7 @@ import { movieService } from '@/services/movieService';
 import { MovieDetailClient } from './movie-detail-client';
 import { notFound } from 'next/navigation';
 import type { MovieDetail } from '@/types/movie';
+import { MovieStructuredData, BreadcrumbStructuredData } from '@/components/seo/StructuredData';
 
 interface MovieDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -94,12 +95,27 @@ export default async function MovieDetailPage({ params }: MovieDetailPageProps) 
   try {
     const { slug } = await params;
     const movieData = await movieService.getMovieDetails(slug);
-    
+
     if (!movieData?.movie) {
       notFound();
     }
 
-    return <MovieDetailClient initialData={movieData} slug={slug} />;
+    const movie = movieData.movie;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thaihoc285.site';
+    const movieUrl = `${baseUrl}/phim/${slug}`;
+
+    const breadcrumbItems = [
+      { name: 'Trang chủ', url: baseUrl },
+      { name: movie.name, url: movieUrl }
+    ];
+
+    return (
+      <>
+        <MovieStructuredData movie={movie} url={movieUrl} />
+        <BreadcrumbStructuredData items={breadcrumbItems} />
+        <MovieDetailClient initialData={movieData} slug={slug} />
+      </>
+    );
   } catch (error) {
     console.error('Error loading movie:', error);
     notFound();

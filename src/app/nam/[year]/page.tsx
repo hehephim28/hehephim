@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BrowseYearClient } from './browse-year-client';
+import { movieService } from '@/services/movieService';
 
 interface YearPageProps {
   params: Promise<{ year: string }>;
@@ -10,6 +11,42 @@ export async function generateMetadata(
   { params }: YearPageProps
 ): Promise<Metadata> {
   const { year } = await params;
+
+  try {
+    // Try to get SEO data from API
+    const response = await movieService.getMoviesByYear(parseInt(year), { page: 1, limit: 1 });
+    const seoData = response.data?.seoOnPage;
+
+    if (seoData) {
+      return {
+        title: seoData.titleHead,
+        description: seoData.descriptionHead,
+        openGraph: {
+          title: seoData.titleHead,
+          description: seoData.descriptionHead,
+          type: seoData.og_type as any,
+          images: seoData.og_image?.map(img => ({
+            url: `https://img.ophim.live${img}`,
+            width: 800,
+            height: 600,
+          })) || [],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: seoData.titleHead,
+          description: seoData.descriptionHead,
+          images: seoData.og_image?.map(img => `https://img.ophim.live${img}`) || [],
+        },
+        alternates: {
+          canonical: `/nam/${year}`,
+        },
+      };
+    }
+  } catch (error) {
+    console.error('Failed to fetch SEO data for year:', year, error);
+  }
+
+  // Fallback to static metadata
   const title = `Phim năm ${year}`;
   const description = `Danh sách phim phát hành năm ${year} chất lượng HD. Xem phim online miễn phí.`;
 
