@@ -7,6 +7,22 @@ import { HeaderSearchBar } from '../features';
 import { useNavigationMetadata } from '../../hooks/useMetadata';
 import { cn } from '../../utils/cn';
 
+// Utility function to prevent body scroll without losing scrollbar
+const useScrollLock = () => {
+  const lockScroll = () => {
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+  };
+
+  const unlockScroll = () => {
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  };
+
+  return { lockScroll, unlockScroll };
+};
+
 export interface HeaderProps {
   className?: string;
 }
@@ -24,7 +40,10 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
   const countryDropdownRef = useRef<HTMLDivElement>(null);
 
   // Get metadata for dropdown
-  const { genres, countries, isLoading: metadataLoading } = useNavigationMetadata();
+  const { genres, countries } = useNavigationMetadata();
+
+  // Initialize scroll lock utility
+  const { lockScroll, unlockScroll } = useScrollLock();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -43,18 +62,18 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
     };
   }, []);
 
-  // Prevent body scroll when dropdown is open
+  // Prevent body scroll when dropdown is open without losing scrollbar
   useEffect(() => {
     if (isGenreDropdownOpen || isCountryDropdownOpen) {
-      document.body.style.overflow = 'hidden';
+      lockScroll();
     } else {
-      document.body.style.overflow = 'unset';
+      unlockScroll();
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      unlockScroll();
     };
-  }, [isGenreDropdownOpen, isCountryDropdownOpen]);
+  }, [isGenreDropdownOpen, isCountryDropdownOpen, lockScroll, unlockScroll]);
 
   // Reset mobile submenu when main menu closes
   useEffect(() => {
@@ -86,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
             className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
           >
             <Film className="w-8 h-8 text-red-500" />
-            <span className="text-xl font-bold">HeHe</span>
+            <span className="text-xl font-bold">HeHePhim</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -127,9 +146,6 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                     className="absolute top-full left-0 mt-2 w-80 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-50 max-h-96 overflow-y-auto"
                   >
                     <div className="p-4">
-                      <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wide">
-                        Thể Loại Phim
-                      </h3>
                       {/* Grid layout for all genres */}
                       <div className="grid grid-cols-3 gap-2">
                         {genres.map((genre) => (
@@ -172,12 +188,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                   />
 
                   <div
-                    className="absolute top-full left-0 mt-2 w-80 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-50 max-h-96 overflow-y-auto"
+                    className="absolute top-full left-0 mt-2 w-80 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-50 max-h-[500px] overflow-y-auto"
                   >
                     <div className="p-4">
-                      <h3 className="text-white font-semibold mb-3 text-sm uppercase tracking-wide">
-                        Quốc Gia
-                      </h3>
                       {/* Grid layout for all countries */}
                       <div className="grid grid-cols-3 gap-2">
                         {countries.map((country) => (
