@@ -3,6 +3,9 @@ import "./globals.css";
 import "../styles.css";
 import { Providers } from './providers';
 
+// Runtime configuration for Cloudflare Pages
+export const runtime = 'nodejs';
+
 export const metadata: Metadata = {
   title: "Hehe Phim - Xem Phim Online Miễn Phí",
   description: "Website xem phim online miễn phí với chất lượng HD. Phim bộ, phim lẻ, hoạt hình, TV shows cập nhật mới nhất.",

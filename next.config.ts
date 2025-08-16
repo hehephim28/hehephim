@@ -1,8 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Use standalone for Cloudflare Pages with Next.js runtime
+  // Use standalone for Cloudflare Pages
   output: 'standalone',
+  
+  // Add trailing slash for better routing
+  trailingSlash: false,
+  
+  // Disable powered by header
+  poweredByHeader: false,
   
   // Skip ESLint during build for deployment
   eslint: {
@@ -14,13 +20,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Disable webpack cache for smaller build size
-  webpack: (config, { dev }) => {
-    if (!dev) {
+  // Optimize webpack for Cloudflare
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
       config.cache = false;
-      // Exclude heavy image processing modules in production
-      config.externals = config.externals || [];
-      config.externals.push('sharp');
     }
     return config;
   },
@@ -40,6 +43,9 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online',
   },
+  
+  // Server external packages for Cloudflare
+  serverExternalPackages: ['sharp'],
 };
 
 export default nextConfig;
