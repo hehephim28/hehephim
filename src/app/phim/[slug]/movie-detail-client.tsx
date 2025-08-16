@@ -273,9 +273,9 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold text-white">Thể loại:</h3>
                     <div className="flex flex-wrap gap-2">
-                      {movie.category.map((cat) => (
+                      {movie.category.map((cat, index) => (
                         <Badge 
-                          key={cat._id} 
+                          key={cat._id || `category-${index}`} 
                           variant="secondary" 
                           className="text-sm hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
                           onClick={() => router.push(`/the-loai/${cat.slug}`)}
@@ -292,9 +292,9 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold text-white">Quốc gia:</h3>
                     <div className="flex flex-wrap gap-2">
-                      {movie.country.map((country) => (
+                      {movie.country.map((country, index) => (
                         <Badge 
-                          key={country._id} 
+                          key={country._id || `country-${index}`} 
                           variant="secondary" 
                           className="text-sm hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
                           onClick={() => router.push(`/quoc-gia/${country.slug}`)}

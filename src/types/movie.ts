@@ -150,7 +150,7 @@ export type MovieType =
   | 'phim-thuyet-minh' 
   | 'phim-long-tieng';
 
-export type SortField = 'modified.time' | '_id' | 'year';
+export type SortField = 'modified.time' | 'year';
 export type SortType = 'asc' | 'desc';
 export type Language = 'vietsub' | 'thuyet-minh' | 'long-tieng';
 

@@ -95,16 +95,19 @@ export const BrowseYearClient: React.FC<BrowseYearClientProps> = ({
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center space-y-4">
-            <h1 className="text-3xl lg:text-4xl font-bold text-white">
-              {pageTitle}
-            </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              {pageSubtitle}
-            </p>
+        {/* Page Header */}
+        <section className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 py-12">
+          <div className="container mx-auto px-4">
+            <div className="text-center space-y-4">
+              <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                {pageTitle}
+              </h1>
+              <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                {pageSubtitle}
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
 
         <div className="container mx-auto px-4 pb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -119,14 +122,7 @@ export const BrowseYearClient: React.FC<BrowseYearClientProps> = ({
                 size="sm"
                 onClick={() => handleSortChange('modified.time', 'desc')}
               >
-                Mới nhất
-              </Button>
-              <Button
-                variant={sortField === '_id' && sortType === 'desc' ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => handleSortChange('_id', 'desc')}
-              >
-                Mới cập nhật
+                Mới thêm
               </Button>
             </div>
           </div>

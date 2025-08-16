@@ -43,7 +43,6 @@ export const API_CONFIG = {
   // Sort options
   SORT_FIELDS: {
     MODIFIED_TIME: 'modified.time',
-    ID: '_id',
     YEAR: 'year',
   },
   
