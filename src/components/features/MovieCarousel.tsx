@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { MovieCard } from './MovieCard';
 import { Button } from '../ui';
@@ -16,26 +16,17 @@ const MovieCarousel: React.FC<MovieCarouselProps> = ({
   isLoading = false,
   className,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-  const [itemsPerView, setItemsPerView] = useState(6);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [itemsPerView, setItemsPerView] = useState(6);
 
-  // Touch events for swipe functionality
-  const [touchStartX, setTouchStartX] = useState(0);
-  const [touchStartY, setTouchStartY] = useState(0);
-  const [touchEndX, setTouchEndX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
-  const [initialScrollLeft, setInitialScrollLeft] = useState(0);
-
-  // Responsive items per view
+  // Responsive items per view for skeleton loading
   useEffect(() => {
     const updateItemsPerView = () => {
       const width = window.innerWidth;
       if (width < 640) setItemsPerView(2);      // mobile: 2 items
-      else if (width < 768) setItemsPerView(3); // tablet: 3 items  
+      else if (width < 768) setItemsPerView(3); // tablet: 3 items
       else if (width < 1024) setItemsPerView(4); // small desktop: 4 items
       else if (width < 1280) setItemsPerView(5); // medium desktop: 5 items
       else setItemsPerView(6);                   // large desktop: 6 items
@@ -46,127 +37,45 @@ const MovieCarousel: React.FC<MovieCarouselProps> = ({
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
 
-  // Calculate how many items we can show and scroll
-  const totalItems = movies.length;
-  const maxIndex = Math.max(0, totalItems - itemsPerView);
+  // Check scroll position and update button states
+  const checkScrollPosition = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
 
-  // Update scroll buttons state
+  // Update scroll buttons state on mount and when movies change
   useEffect(() => {
-    setCanScrollLeft(currentIndex > 0);
-    setCanScrollRight(currentIndex < maxIndex);
-  }, [currentIndex, maxIndex]);
-
-  // Reset to first item when movies change
-  useEffect(() => {
-    setCurrentIndex(0);
+    checkScrollPosition();
   }, [movies]);
 
-  const scrollToIndex = (index: number) => {
-    const newIndex = Math.max(0, Math.min(index, maxIndex));
-    setCurrentIndex(newIndex);
-    
+  // Smooth scroll function
+  const scrollBy = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const itemWidth = scrollRef.current.scrollWidth / totalItems;
+      const scrollAmount = scrollRef.current.clientWidth * 0.8; // Scroll 80% of visible width
+      const newScrollLeft = direction === 'left'
+        ? scrollRef.current.scrollLeft - scrollAmount
+        : scrollRef.current.scrollLeft + scrollAmount;
+
       scrollRef.current.scrollTo({
-        left: newIndex * itemWidth,
+        left: newScrollLeft,
         behavior: 'smooth'
       });
     }
   };
 
-  const handlePrevious = () => {
-    scrollToIndex(currentIndex - itemsPerView);
-  };
-
-  const handleNext = () => {
-    scrollToIndex(currentIndex + itemsPerView);
-  };
-
-  // Touch/Swipe handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.targetTouches[0];
-    setTouchStartX(touch.clientX);
-    setTouchStartY(touch.clientY);
-    setTouchEndX(touch.clientX);
-    setIsDragging(true);
-    setIsHorizontalSwipe(false);
-    
-    // Store initial scroll position
-    if (scrollRef.current) {
-      setInitialScrollLeft(scrollRef.current.scrollLeft);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    
-    const touch = e.targetTouches[0];
-    const currentX = touch.clientX;
-    const currentY = touch.clientY;
-    
-    // Calculate movement distances
-    const deltaX = Math.abs(currentX - touchStartX);
-    const deltaY = Math.abs(currentY - touchStartY);
-    
-    // Determine if this is a horizontal swipe (more horizontal than vertical movement)
-    if (deltaX > 10 || deltaY > 10) {
-      const isHorizontal = deltaX > deltaY;
-      setIsHorizontalSwipe(isHorizontal);
-      
-      if (isHorizontal) {
-        // Prevent vertical scrolling only for horizontal swipes
-        e.preventDefault();
-        
-        // Update scroll position in real-time
-        if (scrollRef.current) {
-          const dragDistance = touchStartX - currentX;
-          const newScrollLeft = initialScrollLeft + dragDistance;
-          scrollRef.current.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollRef.current.scrollWidth - scrollRef.current.clientWidth));
-        }
-      }
-    }
-    
-    setTouchEndX(currentX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    
-    // Only handle swipe logic if it was a horizontal swipe
-    if (isHorizontalSwipe && touchStartX && touchEndX) {
-      const distance = touchStartX - touchEndX;
-      const isLeftSwipe = distance > 50;
-      const isRightSwipe = distance < -50;
-
-      if (isLeftSwipe && canScrollRight) {
-        handleNext();
-      } else if (isRightSwipe && canScrollLeft) {
-        handlePrevious();
-      } else {
-        // Snap back to current position if swipe wasn't strong enough
-        scrollToIndex(currentIndex);
-      }
-      
-      // Prevent default only for horizontal swipes
-      e.preventDefault();
-    }
-
-    // Reset all touch states
-    setTouchStartX(0);
-    setTouchStartY(0);
-    setTouchEndX(0);
-    setIsHorizontalSwipe(false);
-    setInitialScrollLeft(0);
-  };
+  const handlePrevious = () => scrollBy('left');
+  const handleNext = () => scrollBy('right');
 
   // Show loading skeleton
   if (isLoading) {
     return (
       <div className={cn('relative', className)}>
-        <div className="flex space-x-4 overflow-hidden">
+        <div className="flex gap-3 sm:gap-4 overflow-hidden px-1">
           {Array.from({ length: itemsPerView }).map((_, index) => (
-            <div key={index} className="flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52">
+            <div key={index} className="flex-shrink-0 w-44 sm:w-48 md:w-52 lg:w-56 xl:w-60">
               <div className="bg-slate-700 animate-pulse rounded-lg aspect-[2/3]"></div>
             </div>
           ))}
@@ -184,82 +93,64 @@ const MovieCarousel: React.FC<MovieCarouselProps> = ({
   }
 
   return (
-    <div className={cn('relative carousel-group', className)}>
-      {/* Previous Button - Hidden on mobile */}
+    <div className={cn('relative carousel-wrapper', className)}>
+      {/* Previous Button - Show on hover */}
       {canScrollLeft && (
         <Button
           variant="ghost"
           size="sm"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 opacity-0 carousel-group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex"
+          className="carousel-nav-btn absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white p-2 opacity-0 transition-opacity duration-300 hidden sm:flex rounded-full"
           onClick={handlePrevious}
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
       )}
 
-      {/* Next Button - Hidden on mobile */}
+      {/* Next Button - Show on hover */}
       {canScrollRight && (
         <Button
           variant="ghost"
           size="sm"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 opacity-0 carousel-group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex"
+          className="carousel-nav-btn absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/60 hover:bg-black/80 text-white p-2 opacity-0 transition-opacity duration-300 hidden sm:flex rounded-full"
           onClick={handleNext}
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-5 h-5" />
         </Button>
       )}
 
-      {/* Carousel Container */}
+      {/* Horizontal Scroll Container */}
       <div
         ref={scrollRef}
-        className={cn(
-          'flex space-x-4 overflow-x-auto scrollbar-hide carousel-container',
-          isDragging && isHorizontalSwipe ? 'scroll-auto' : 'scroll-smooth'
-        )}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2 px-1"
+        onScroll={checkScrollPosition}
         style={{
-          touchAction: 'manipulation',
-          overscrollBehaviorX: 'contain',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+          scrollSnapType: 'x proximity',
         }}
       >
         {movies.map((movie, index) => (
           <div
             key={`${movie.slug}-${index}`}
-            className="flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
+            className="flex-shrink-0 w-44 sm:w-48 md:w-52 lg:w-56 xl:w-60"
+            style={{ scrollSnapAlign: 'start' }}
           >
-            <MovieCard 
-              movie={movie} 
+            <MovieCard
+              movie={movie}
               size="md"
-              className="w-full"
+              className="w-full transform transition-transform duration-200 hover:scale-105"
             />
           </div>
         ))}
+        {/* Add some padding at the end */}
+        <div className="flex-shrink-0 w-4"></div>
       </div>
 
-      {/* Scroll Indicators */}
-      {totalItems > itemsPerView && (
-        <div className="flex justify-center mt-4 space-x-2">
-          {Array.from({ length: Math.ceil(totalItems / itemsPerView) }).map((_, index) => (
-            <button
-              key={index}
-              className={cn(
-                'w-2 h-2 rounded-full transition-colors duration-200',
-                index === Math.floor(currentIndex / itemsPerView)
-                  ? 'bg-red-500'
-                  : 'bg-slate-600 hover:bg-slate-400'
-              )}
-              onClick={() => scrollToIndex(index * itemsPerView)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Mobile Swipe Hint */}
+      {/* Mobile Scroll Hint */}
       <div className="sm:hidden text-center mt-2">
         <p className="text-slate-500 text-xs">
-          ← Vuốt để xem thêm →
+          ← Kéo để xem thêm →
         </p>
       </div>
     </div>

@@ -24,18 +24,18 @@ const MovieCard: React.FC<MovieCardProps> = ({
 
   const sizes = {
     sm: {
-      container: 'w-[160px]',
-      image: 'h-[240px]',
+      container: '',
+      image: 'aspect-[2/3] h-auto',
       title: 'text-sm',
     },
     md: {
-      container: 'w-[180px]',
-      image: 'h-[270px]',
+      container: '',
+      image: 'aspect-[2/3] h-auto',
       title: 'text-sm',
     },
     lg: {
-      container: 'w-[200px]',
-      image: 'h-[300px]',
+      container: '',
+      image: 'aspect-[2/3] h-auto',
       title: 'text-base',
     },
   };
@@ -48,7 +48,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
           <img
             src={imageUrl}
             alt={movie.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300"
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;

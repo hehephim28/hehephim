@@ -4,8 +4,8 @@
   "description": "Website xem phim online miễn phí với chất lượng HD",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e293b",
-  "theme_color": "#ef4444",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/favicon.png",

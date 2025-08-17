@@ -235,7 +235,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       // Mobile: longer timeout and only hide if not interacting
       controlsTimeoutRef.current = setTimeout(() => {
         setControlsVisible(false);
-      }, 5000);
+      }, 3000);
     }
   };
 

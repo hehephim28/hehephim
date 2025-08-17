@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   authors: [{ name: "Hehe Phim Team" }],
   creator: "Hehe Phim",
   publisher: "Hehe Phim",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -72,11 +77,15 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#ef4444" />
+        <meta name="theme-color" content="#0f172a" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="HeHePhim" />
+        <meta name="msapplication-TileColor" content="#0f172a" />
+        <meta name="msapplication-navbutton-color" content="#0f172a" />
       </head>
       <body className="font-sans antialiased">
         <Providers>
