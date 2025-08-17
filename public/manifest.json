@@ -8,8 +8,28 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/favicon.ico",
+      "sizes": "16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/logo.png",
       "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon-120x120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon-180x180.png",
+      "sizes": "180x180",
       "type": "image/png"
     },
     {
@@ -19,9 +39,10 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/apple-icon",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "categories": ["entertainment", "multimedia"],

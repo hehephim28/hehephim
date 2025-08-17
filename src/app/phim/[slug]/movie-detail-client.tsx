@@ -121,7 +121,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
       try {
         await navigator.share({
           title: movie.name,
-          text: `Xem phim ${movie.name} (${movie.year}) - ${movie.origin_name}`,
+          // text: `${movie.name} (${movie.year}) - ${movie.origin_name} \n`,
           url: window.location.href,
         });
       } catch (error) {
