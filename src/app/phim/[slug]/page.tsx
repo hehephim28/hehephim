@@ -6,7 +6,7 @@ import type { MovieDetail } from '@/types/movie';
 import { MovieStructuredData, BreadcrumbStructuredData } from '@/components/seo/StructuredData';
 
 // Edge Runtime for Cloudflare Pages
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 interface MovieDetailPageProps {
   params: Promise<{ slug: string }>;
