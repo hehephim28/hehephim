@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/logo.png', sizes: '16x16', type: 'image/png' },
       { url: '/logo.png', sizes: '32x32', type: 'image/png' },
       { url: '/logo.png', sizes: '192x192', type: 'image/png' },
     ],
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon-152x152.png', sizes: '152x152', type: 'image/png' },
       { url: '/apple-touch-icon-180x180.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
+    shortcut: '/logo.png',
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online'),
   openGraph: {
@@ -83,6 +83,9 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/logo.png" />
+        <link rel="shortcut icon" href="/logo.png" />
         <meta name="theme-color" content="#0f172a" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
