@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Use standalone for Cloudflare Pages
-  output: 'standalone',
+  // Remove output config - let Cloudflare Pages handle it
   
   // Add trailing slash for better routing
   trailingSlash: false,

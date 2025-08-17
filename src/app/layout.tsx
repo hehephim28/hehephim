@@ -4,7 +4,7 @@ import "../styles.css";
 import { Providers } from './providers';
 
 // Runtime configuration for Cloudflare Pages
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 export const metadata: Metadata = {
   title: "Hehe Phim - Xem Phim Online Miễn Phí",
