@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { BrowseGenreClient } from './browse-genre-client';
 import { movieService } from '@/services/movieService';
 
+// Edge Runtime for Cloudflare Pages
+export const runtime = 'edge';
+
 interface GenrePageProps {
   params: Promise<{ genre: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

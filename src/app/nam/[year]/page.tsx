@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { BrowseYearClient } from './browse-year-client';
 import { movieService } from '@/services/movieService';
 
+// Edge Runtime for Cloudflare Pages
+export const runtime = 'edge';
+
 interface YearPageProps {
   params: Promise<{ year: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

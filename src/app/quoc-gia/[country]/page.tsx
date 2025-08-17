@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { BrowseCountryClient } from './browse-country-client';
 import { movieService } from '@/services/movieService';
 
+// Edge Runtime for Cloudflare Pages
+export const runtime = 'edge';
+
 interface CountryPageProps {
   params: Promise<{ country: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

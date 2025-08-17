@@ -4,6 +4,9 @@ import { getTypeTitle } from '@/utils/helpers';
 import { movieService } from '@/services/movieService';
 import type { MovieType } from '@/types/movie';
 
+// Edge Runtime for Cloudflare Pages
+export const runtime = 'edge';
+
 interface BrowsePageProps {
   params: Promise<{ type: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
