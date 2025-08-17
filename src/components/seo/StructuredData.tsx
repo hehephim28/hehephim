@@ -16,7 +16,7 @@ interface BreadcrumbStructuredDataProps {
   }>;
 }
 
-export function WebsiteStructuredData({ url = process.env.NEXT_PUBLIC_SITE_URL || 'https://thaihoc285.site' }: WebsiteStructuredDataProps) {
+export function WebsiteStructuredData({ url = process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online' }: WebsiteStructuredDataProps) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -81,7 +81,7 @@ export function MovieStructuredData({ movie, url }: MovieStructuredDataProps) {
     "publisher": {
       "@type": "Organization",
       "name": "Hehe Phim",
-      "url": process.env.NEXT_PUBLIC_SITE_URL || "https://thaihoc285.site"
+      "url": process.env.NEXT_PUBLIC_SITE_URL || "https://hehephim.online"
     }
   };
 
