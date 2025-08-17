@@ -4,7 +4,7 @@ import "../styles.css";
 import { Providers } from './providers';
 
 // Runtime configuration for Cloudflare Pages
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 export const metadata: Metadata = {
   title: "Hehe Phim - Xem Phim Online Miễn Phí",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
       { url: '/logo.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: [
-      { url: '/logo.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/logo.png',
+    shortcut: '/favicon.png',
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online'),
   openGraph: {
@@ -73,6 +73,7 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#ef4444" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="HeHePhim" />
