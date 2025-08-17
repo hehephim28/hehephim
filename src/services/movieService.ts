@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import { apiClient } from './apiClient';
 import type { 
   Movie, 
   ApiResponse, 
