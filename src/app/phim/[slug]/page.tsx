@@ -7,6 +7,8 @@ import { MovieStructuredData, BreadcrumbStructuredData } from '@/components/seo/
 
 // Edge Runtime for Cloudflare Pages
 export const runtime = 'edge';
+// Revalidate every 6 hours for fresh content
+export const revalidate = 21600;
 
 interface MovieDetailPageProps {
   params: Promise<{ slug: string }>;
