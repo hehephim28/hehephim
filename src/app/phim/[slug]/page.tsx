@@ -97,14 +97,18 @@ export async function generateMetadata(
 export default async function MovieDetailPage({ params }: MovieDetailPageProps) {
   try {
     const { slug } = await params;
+    console.log('🎬 Loading movie with slug:', slug);
+    
     const movieData = await movieService.getMovieDetails(slug);
+    console.log('📝 Movie data received:', !!movieData?.movie);
 
     if (!movieData?.movie) {
+      console.log('❌ Movie not found for slug:', slug);
       notFound();
     }
 
     const movie = movieData.movie;
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thaihoc285.site';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online';
     const movieUrl = `${baseUrl}/phim/${slug}`;
 
     const breadcrumbItems = [
@@ -120,7 +124,7 @@ export default async function MovieDetailPage({ params }: MovieDetailPageProps) 
       </>
     );
   } catch (error) {
-    console.error('Error loading movie:', error);
+    console.error('💥 Error loading movie:', error);
     notFound();
   }
 }
