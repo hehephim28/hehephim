@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Search } from 'lucide-react';
 import { Button } from '../ui';
 import { HeaderSearchBar } from '../features';
 import { useNavigationMetadata } from '../../hooks/useMetadata';
@@ -33,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [mobileGenreOpen, setMobileGenreOpen] = useState(false);
   const [mobileCountryOpen, setMobileCountryOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const pathname = usePathname();
 
   // Refs for dropdown elements
@@ -82,6 +83,20 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
       setMobileCountryOpen(false);
     }
   }, [isMenuOpen]);
+
+  // Close mobile search when menu opens
+  useEffect(() => {
+    if (isMenuOpen) {
+      setMobileSearchOpen(false);
+    }
+  }, [isMenuOpen]);
+
+  // Close menu when mobile search opens
+  useEffect(() => {
+    if (mobileSearchOpen) {
+      setIsMenuOpen(false);
+    }
+  }, [mobileSearchOpen]);
   
   // Hide search bar on search page to avoid duplicates
   const hideSearchBar = pathname?.startsWith('/tim-kiem');
@@ -99,10 +114,38 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
     )}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Mobile Layout */}
+          <div className="md:hidden flex items-center flex-1">
+            {/* Mobile Menu Button - Left side */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              leftIcon={isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            >
+              <span className="sr-only">
+                {isMenuOpen ? 'Close menu' : 'Open menu'}
+              </span>
+            </Button>
+
+            {/* Logo - Next to hamburger with flex-1 to take remaining space */}
+            <Link
+              href="/"
+              className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors flex-1 ml-3"
+            >
+              <img
+                src="/logo.png"
+                alt="HeHePhim Logo"
+                className="w-8 h-8 object-contain"
+              />
+              <span className="text-lg font-bold">HeHePhim</span>
+            </Link>
+          </div>
+
+          {/* Desktop Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
+            className="hidden md:flex items-center space-x-2 text-white hover:text-red-400 transition-colors"
           >
             <img
               src="/logo.png"
@@ -215,43 +258,60 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
             </div>
           </nav>
 
-          {/* Search Bar - Hidden on search page */}
+          {/* Desktop Search Bar - Hidden on search page */}
           {!hideSearchBar && (
             <div className="hidden md:block">
-              <HeaderSearchBar 
+              <HeaderSearchBar
                 placeholder="Tìm kiếm phim..."
                 className="w-80"
               />
             </div>
           )}
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            leftIcon={isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          >
-            <span className="sr-only">
-              {isMenuOpen ? 'Close menu' : 'Open menu'}
-            </span>
-          </Button>
+          {/* Mobile Search Button - Right side with more margin */}
+          {!hideSearchBar && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden ml-4"
+              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              leftIcon={<Search className="w-5 h-5" />}
+            >
+              <span className="sr-only">Search</span>
+            </Button>
+          )}
         </div>
+
+        {/* Mobile Search Overlay - Overlays on top of header with better spacing */}
+        {mobileSearchOpen && !hideSearchBar && (
+          <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-slate-900/98 backdrop-blur-sm border-b border-slate-800 z-50">
+            <div className="container mx-auto px-4 h-full">
+              <div className="flex items-center h-full space-x-3">
+                <div className="flex-1 mr-2">
+                  <HeaderSearchBar
+                    placeholder="Tìm kiếm phim..."
+                    className="w-full"
+                    onSearch={() => setMobileSearchOpen(false)}
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileSearchOpen(false)}
+                  leftIcon={<X className="w-5 h-5" />}
+                >
+                  <span className="sr-only">Close search</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-800">
             <div className="space-y-4">
-              {/* Mobile Search - Hidden on search page */}
-              {!hideSearchBar && (
-                <HeaderSearchBar 
-                  placeholder="Tìm kiếm phim..."
-                  className="w-full"
-                  onSearch={() => setIsMenuOpen(false)}
-                />
-              )}
-
               {/* Mobile Navigation */}
               <nav className="space-y-2">
                 {navigationItems.map((item) => (

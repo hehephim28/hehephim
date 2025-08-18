@@ -11,12 +11,14 @@ export interface HeaderSearchBarProps {
   className?: string;
   placeholder?: string;
   onSearch?: (query: string) => void;
+  autoFocus?: boolean;
 }
 
 export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
   className,
   placeholder = 'Tìm kiếm phim...',
-  onSearch
+  onSearch,
+  autoFocus = false
 }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,7 +108,7 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
 
   // Get display suggestions
   const getDisplayData = (): SuggestionData | null => {
-    if (searchQuery.trim() && suggestions?.items?.length > 0) {
+    if (searchQuery.trim() && suggestions?.items && suggestions.items.length > 0) {
       return {
         title: 'Phim gợi ý',
         items: suggestions.items,
@@ -145,9 +147,10 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           variant="search"
-          className={cn("pr-12", className?.includes('w-full') ? 'w-full' : 'w-80')}
+          autoFocus={autoFocus}
+          className={cn("pr-8", className?.includes('w-full') ? 'w-full' : 'w-80')}
         />
-        
+
         {/* Clear button */}
         {searchQuery && (
           <Button
@@ -155,21 +158,11 @@ export const HeaderSearchBar: React.FC<HeaderSearchBarProps> = ({
             variant="ghost"
             size="sm"
             onClick={clearInput}
-            className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-700 rounded-full"
+            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-700 rounded-full"
           >
             <X className="w-4 h-4" />
           </Button>
         )}
-
-        {/* Search button */}
-        <Button
-          type="submit"
-          variant="ghost"
-          size="sm"
-          className="absolute right-1 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-700 rounded-full"
-        >
-          <Search className="w-4 h-4" />
-        </Button>
       </form>
 
       {/* Enhanced Suggestions Dropdown */}

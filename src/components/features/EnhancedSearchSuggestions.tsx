@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Search, Clock, TrendingUp, X, Star, Calendar, Film } from 'lucide-react';
+import { Search, Clock, TrendingUp, X, Calendar, Film } from 'lucide-react';
 import { Button } from '../ui';
 import { cn } from '../../utils/cn';
 import { decodeHtmlEntities } from '../../utils/helpers';
@@ -70,16 +70,6 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
               <span>{movie.year}</span>
             </div>
           )}
-          {movie.quality && (
-            <span className="px-1.5 py-0.5 bg-red-600/20 text-red-400 rounded text-[10px] font-medium">
-              {movie.quality}
-            </span>
-          )}
-          {movie.lang && (
-            <span className="px-1.5 py-0.5 bg-blue-600/20 text-blue-400 rounded text-[10px] font-medium">
-              {movie.lang}
-            </span>
-          )}
         </div>
         {movie.origin_name && movie.origin_name !== movie.name && (
           <p className="text-xs text-slate-500 truncate mt-1">
@@ -87,14 +77,6 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
           </p>
         )}
       </div>
-
-      {/* Movie Rating (if available) */}
-      {movie.tmdb?.vote_average && movie.tmdb.vote_average > 0 && (
-        <div className="flex items-center gap-1 text-xs text-yellow-400">
-          <Star className="w-3 h-3 fill-current" />
-          <span>{movie.tmdb.vote_average.toFixed(1)}</span>
-        </div>
-      )}
     </div>
   );
 
