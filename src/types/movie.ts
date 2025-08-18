@@ -12,6 +12,7 @@ export interface Movie {
   chieurap?: boolean;
   time?: string;
   episode_current?: string;
+  episode_total?: string;
   quality?: string;
   lang?: string;
   notify?: string;
