@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         '/admin/',
         '/_next/',
         '/static/',
+        '/test-carousel/',
       ],
     },
     sitemap: `${domain}/sitemap.xml`,

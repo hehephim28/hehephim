@@ -37,24 +37,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Genre pages
   const genrePages: MetadataRoute.Sitemap = [
     'hanh-dong',
-    'tinh-cam',
-    'hai-huoc',
-    'kinh-di',
-    'phieu-luu',
-    'khoa-hoc-vien-tuong',
+    'mien-tay',
+    'tre-em',
+    'lich-su',
+    'co-trang',
     'chien-tranh',
+    'vien-tuong',
+    'kinh-di',
+    'tai-lieu',
+    'bi-an',
+    'phim-18',
+    'tinh-cam',
+    'tam-ly',
     'the-thao',
+    'phieu-luu',
     'am-nhac',
     'gia-dinh',
     'hoc-duong',
-    'co-trang',
-    'than-thoai',
-    'tai-lieu',
-    'chinh-kich',
-    'bi-an',
+    'hai-huoc',
     'hinh-su',
     'vo-thuat',
-    'lich-su'
+    'khoa-hoc',
+    'than-thoai',
+    'chinh-kich',
+    'kinh-dien'
   ].map(genre => ({
     url: `${baseUrl}/the-loai/${genre}`,
     lastModified: new Date(),
@@ -64,16 +70,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Country pages
   const countryPages: MetadataRoute.Sitemap = [
+    'viet-nam',
     'trung-quoc',
-    'han-quoc',
-    'nhat-ban',
     'thai-lan',
-    'au-my',
-    'anh',
-    'phap',
     'hong-kong',
-    'an-do',
-    'viet-nam'
+    'phap',
+    'duc',
+    'ha-lan',
+    'mexico',
+    'thuy-dien',
+    'dan-mach',
+    'thuy-si',
+    'han-quoc',
+    'au-my',
+    'canada',
+    'tay-ban-nha',
+    'indonesia',
+    'malaysia',
+    'bo-dao-nha',
+    'uae',
+    'chau-phi',
+    'nhat-ban',
+    'dai-loan',
+    'anh',
+    'nga',
+    'uc',
+    'y'
   ].map(country => ({
     url: `${baseUrl}/quoc-gia/${country}`,
     lastModified: new Date(),
@@ -84,11 +106,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Year pages
   const currentYear = new Date().getFullYear();
   const yearPages: MetadataRoute.Sitemap = [];
-  for (let year = currentYear; year >= currentYear - 10; year--) {
+  for (let year = currentYear; year >= currentYear - 5; year--) {
     yearPages.push({
       url: `${baseUrl}/nam/${year}`,
       lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
+      changeFrequency: 'yearly' as const,
       priority: 0.7,
     });
   }
@@ -96,12 +118,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     // Get recent movies from specific countries with different limits
     const targetCountries = [
-      { slug: 'han-quoc', limit: 25 },   // Hàn Quốc: 25 phim
-      { slug: 'trung-quoc', limit: 25 }, // Trung Quốc: 25 phim  
-      { slug: 'au-my', limit: 25 },      // Âu Mỹ: 25 phim
-      { slug: 'viet-nam', limit: 5 }     // Việt Nam: 5 phim
+      { slug: 'han-quoc', limit: 64 },   // Hàn Quốc: 25 phim
+      { slug: 'trung-quoc', limit: 64 }, // Trung Quốc: 25 phim  
+      { slug: 'au-my', limit: 64 },      // Âu Mỹ: 25 phim
+      { slug: 'viet-nam', limit: 64 },     // Việt Nam: 5 phim
+      { slug: 'nhat-ban', limit: 64 },
+      { slug: 'anh', limit: 64},
+      { slug: 'dai-loan', limit: 64 }
     ];
-    const currentYear = new Date().getFullYear();
     const moviePages: MetadataRoute.Sitemap = [];
 
     // Get movies from each target country for recent years (with timeout)
@@ -111,8 +135,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const countryMovies = await Promise.race([
           movieService.getMoviesByCountry(country.slug, { 
             page: 1, 
-            limit: country.limit,
-            year: currentYear
+            limit: country.limit
           }),
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Timeout')), 10000)
