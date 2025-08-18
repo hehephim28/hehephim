@@ -426,12 +426,12 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                   <EpisodePlayer
                     episodes={episodes}
                     movieTitle={movie.name}
-                    poster={movie.poster_url}
+                    poster={posterUrl}
                   />
                 ) : (
                   <VideoPlayer
                     title={movie.name}
-                    poster={movie.poster_url}
+                    poster={posterUrl}
                     className="w-full"
                   />
                 )}
