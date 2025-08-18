@@ -4,6 +4,7 @@ import { MovieDetailClient } from './movie-detail-client';
 import { notFound } from 'next/navigation';
 import type { MovieDetail } from '@/types/movie';
 import { MovieStructuredData, BreadcrumbStructuredData } from '@/components/seo/StructuredData';
+import { getOptimizedImageUrl } from '@/utils/helpers';
 
 // Edge Runtime for Cloudflare Pages
 export const runtime = 'edge';
@@ -57,13 +58,13 @@ export async function generateMetadata(
         siteName: 'Hehe Phim',
         images: [
           {
-            url: movie.poster_url || '',
+            url: getOptimizedImageUrl(movie.poster_url || ''),
             width: 800,
             height: 1200,
             alt: movie.name,
           },
           {
-            url: movie.thumb_url || movie.poster_url || '',
+            url: getOptimizedImageUrl(movie.thumb_url || movie.poster_url || ''),
             width: 1280,
             height: 720,
             alt: `${movie.name} backdrop`,
@@ -75,7 +76,7 @@ export async function generateMetadata(
         card: 'summary_large_image',
         title,
         description,
-        images: [movie.poster_url || ''],
+        images: [getOptimizedImageUrl(movie.poster_url || '')],
       },
       alternates: {
         canonical: `/phim/${slug}`,

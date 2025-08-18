@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Search, Clock, TrendingUp, X, Calendar, Film } from 'lucide-react';
 import { Button } from '../ui';
 import { cn } from '../../utils/cn';
-import { decodeHtmlEntities } from '../../utils/helpers';
+import { decodeHtmlEntities, getOptimizedImageUrl } from '../../utils/helpers';
 import type { Movie } from '../../types/movie';
 
 export interface SuggestionData {
@@ -42,10 +42,7 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
         <div className="flex-shrink-0 w-12 h-16 bg-slate-700 rounded overflow-hidden">
           {movie.poster_url ? (
             <img
-              src={movie.poster_url.startsWith('http') 
-                ? movie.poster_url 
-                : `https://phimimg.com/${movie.poster_url}`
-              }
+              src={getOptimizedImageUrl(movie.poster_url)}
               alt={movie.name}
               className="w-full h-full object-cover"
               loading="lazy"

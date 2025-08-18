@@ -1,4 +1,5 @@
 import { Movie, MovieDetail } from '@/types/movie';
+import { getOptimizedImageUrl } from '@/utils/helpers';
 
 interface WebsiteStructuredDataProps {
   url?: string;
@@ -54,7 +55,7 @@ export function MovieStructuredData({ movie, url }: MovieStructuredDataProps) {
     "name": movie.name,
     "alternateName": movie.origin_name,
     "description": movie.content?.replace(/<[^>]*>/g, '') || `Xem phim ${movie.name} online miễn phí`,
-    "image": movie.poster_url || movie.thumb_url,
+    "image": getOptimizedImageUrl(movie.poster_url || movie.thumb_url || ''),
     "url": url,
     "dateCreated": movie.year ? `${movie.year}-01-01` : undefined,
     "genre": movie.category?.map(cat => cat.name) || [],
