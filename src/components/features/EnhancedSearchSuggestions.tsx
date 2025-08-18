@@ -70,6 +70,17 @@ export const EnhancedSearchSuggestions: React.FC<EnhancedSearchSuggestionsProps>
               <span>{movie.year}</span>
             </div>
           )}
+          {/* Show duration for single movies, episode info for series */}
+          {movie.type === 'single' && movie.time && (
+            <span className="px-1.5 py-0.5 bg-green-600/20 text-green-400 rounded text-[10px] font-medium">
+              {movie.time}
+            </span>
+          )}
+          {movie.type === 'series' && movie.episode_current && (
+            <span className="px-1.5 py-0.5 bg-purple-600/20 text-purple-400 rounded text-[10px] font-medium">
+              {movie.episode_current}
+            </span>
+          )}
         </div>
         {movie.origin_name && movie.origin_name !== movie.name && (
           <p className="text-xs text-slate-500 truncate mt-1">
