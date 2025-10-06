@@ -21,8 +21,8 @@ export function WebsiteStructuredData({ url = process.env.NEXT_PUBLIC_SITE_URL |
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Hehe Phim",
-    "alternateName": "Hehe Phim - Xem Phim Online",
+    "name": "HeHePhim",
+    "alternateName": "HeHePhim - Xem Phim Online",
     "url": url,
     "description": "Website xem phim online miễn phí với chất lượng HD. Phim bộ, phim lẻ, hoạt hình mới nhất.",
     "potentialAction": {
@@ -35,7 +35,7 @@ export function WebsiteStructuredData({ url = process.env.NEXT_PUBLIC_SITE_URL |
     },
     "publisher": {
       "@type": "Organization",
-      "name": "Hehe Phim",
+      "name": "HeHePhim",
       "url": url
     }
   };
@@ -81,7 +81,7 @@ export function MovieStructuredData({ movie, url }: MovieStructuredDataProps) {
     } : undefined,
     "publisher": {
       "@type": "Organization",
-      "name": "Hehe Phim",
+      "name": "HeHePhim",
       "url": process.env.NEXT_PUBLIC_SITE_URL || "https://hehephim.online"
     }
   };

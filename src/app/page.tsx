@@ -9,20 +9,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const currentYear = new Date().getFullYear();
 
   return {
-    title: 'Hehe Phim - Xem Phim Online Miễn Phí Chất Lượng HD',
+    title: 'HeHePhim - Xem Phim Online Miễn Phí Chất Lượng HD',
     description: `Website xem phim online miễn phí với chất lượng HD. Phim bộ, phim lẻ, hoạt hình mới nhất ${currentYear}. Xem phim không quảng cáo, tốc độ cao.`,
     keywords: `xem phim online, phim HD, phim bộ, phim lẻ, hoạt hình, phim mới ${currentYear}, xem phim miễn phí, phim vietsub`,
     openGraph: {
-      title: 'Hehe Phim - Xem Phim Online Miễn Phí Chất Lượng HD',
+      title: 'HeHePhim - Xem Phim Online Miễn Phí Chất Lượng HD',
       description: `Website xem phim online miễn phí với chất lượng HD. Phim bộ, phim lẻ, hoạt hình mới nhất ${currentYear}.`,
       type: 'website',
       locale: 'vi_VN',
-      siteName: 'Hehe Phim',
+      siteName: 'HeHePhim',
       url: '/',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Hehe Phim - Xem Phim Online Miễn Phí Chất Lượng HD',
+      title: 'HeHePhim - Xem Phim Online Miễn Phí Chất Lượng HD',
       description: `Website xem phim online miễn phí với chất lượng HD. Phim bộ, phim lẻ, hoạt hình mới nhất ${currentYear}.`,
     },
     alternates: {

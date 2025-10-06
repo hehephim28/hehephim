@@ -25,7 +25,7 @@ export async function generateMetadata(
     
     if (!movieData?.movie) {
       return {
-        title: 'Không tìm thấy phim - Hehe Phim',
+        title: 'Không tìm thấy phim - HeHePhim',
         description: 'Phim bạn đang tìm kiếm không tồn tại.',
       };
     }
@@ -55,7 +55,7 @@ export async function generateMetadata(
         description,
         type: 'video.movie',
         locale: 'vi_VN',
-        siteName: 'Hehe Phim',
+        siteName: 'HeHePhim',
         images: [
           {
             url: getOptimizedImageUrl(movie.poster_url || ''),
@@ -91,7 +91,7 @@ export async function generateMetadata(
     };
   } catch (error) {
     return {
-      title: 'Lỗi tải phim - Hehe Phim',
+      title: 'Lỗi tải phim - HeHePhim',
       description: 'Có lỗi xảy ra khi tải thông tin phim.',
     };
   }

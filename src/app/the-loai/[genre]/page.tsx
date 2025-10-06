@@ -54,10 +54,10 @@ export async function generateMetadata(
   const description = `Danh sách phim thể loại ${genre} mới nhất, chất lượng HD. Xem phim online miễn phí.`;
 
   return {
-    title: `${title} - Hehe Phim`,
+    title: `${title} - HeHePhim`,
     description,
     openGraph: {
-      title: `${title} - Hehe Phim`,
+      title: `${title} - HeHePhim`,
       description,
       type: 'website',
     },

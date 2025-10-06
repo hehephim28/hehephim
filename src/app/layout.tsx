@@ -14,12 +14,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Hehe Phim - Xem Phim Online Miễn Phí",
+  title: "HeHePhim - Xem Phim Online Miễn Phí",
   description: "Website xem phim online miễn phí với chất lượng HD. Phim bộ, phim lẻ, hoạt hình, TV shows cập nhật mới nhất.",
   keywords: "xem phim online, phim HD, phim bộ, phim lẻ, hoạt hình, TV shows",
-  authors: [{ name: "Hehe Phim Team" }],
-  creator: "Hehe Phim",
-  publisher: "Hehe Phim",
+  authors: [{ name: "HeHePhim Team" }],
+  creator: "HeHePhim",
+  publisher: "HeHePhim",
   formatDetection: {
     email: false,
     address: false,
@@ -41,23 +41,23 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hehephim.online'),
   openGraph: {
-    title: "Hehe Phim - Xem Phim Online Miễn Phí",
+    title: "HeHePhim - Xem Phim Online Miễn Phí",
     description: "Website xem phim online miễn phí với chất lượng HD",
     type: "website",
     locale: "vi_VN",
-    siteName: "Hehe Phim",
+    siteName: "HeHePhim",
     images: [
       {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'Hehe Phim Logo',
+        alt: 'HeHePhim Logo',
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Hehe Phim - Xem Phim Online Miễn Phí",
+    title: "HeHePhim - Xem Phim Online Miễn Phí",
     description: "Website xem phim online miễn phí với chất lượng HD",
     images: ['/logo.png'],
   },

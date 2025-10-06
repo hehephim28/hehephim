@@ -15,8 +15,8 @@ export async function generateMetadata(
   const keyword = resolvedSearchParams.keyword as string || '';
   
   const title = keyword 
-    ? `Tìm kiếm "${keyword}" - Hehe Phim`
-    : 'Tìm kiếm phim - Hehe Phim';
+    ? `Tìm kiếm "${keyword}" - HeHePhim`
+    : 'Tìm kiếm phim - HeHePhim';
   
   const description = keyword
     ? `Kết quả tìm kiếm cho "${keyword}". Xem phim online miễn phí chất lượng HD.`
