@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -97,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
       setIsMenuOpen(false);
     }
   }, [mobileSearchOpen]);
-  
+
   // Hide search bar on search page to avoid duplicates
   const hideSearchBar = pathname?.startsWith('/tim-kiem');
 
@@ -166,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                 {item.label}
               </Link>
             ))}
-            
+
             {/* Dropdown for Thể loại */}
             <div className="relative" ref={genreDropdownRef}>
               <button
@@ -324,7 +326,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                     {item.label}
                   </Link>
                 ))}
-                
+
                 {/* Mobile Genres Section */}
                 <div className="pt-4 border-t border-slate-700">
                   <button

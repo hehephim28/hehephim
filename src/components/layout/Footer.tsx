@@ -34,7 +34,7 @@ const Footer: React.FC<FooterProps> = ({ className }) => {
             </p>
             <div className="flex items-center space-x-2 text-slate-400 text-sm">
               <Mail className="w-4 h-4" />
-              <span>info@hehephim.com</span>
+              <span>hehephim28@gmail.com</span>
             </div>
             <div className="text-slate-400 text-sm">© 2024 HeHePhim.</div>
           </div>

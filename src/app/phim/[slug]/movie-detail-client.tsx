@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Play, 
-  Star, 
-  Calendar, 
-  Globe, 
-  Clock, 
-  Users, 
+import {
+  Play,
+  Star,
+  Calendar,
+  Globe,
+  Clock,
+  Users,
   Film,
   Share2,
   Heart,
@@ -19,14 +19,14 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/Loading';
-import { VideoPlayer, EpisodePlayer } from '@/components/ui/VideoPlayer';
+import { IframePlayer, EpisodeIframePlayer } from '@/components/ui/IframePlayer';
 import { MovieSection } from '@/components/features/MovieSection';
 import { Breadcrumb } from '@/components/layout/Breadcrumb';
 import type { MovieDetailResponse } from '@/types/movie';
-import { 
-  useRelatedMovies, 
+import {
+  useRelatedMovies,
   useFavorites,
-  useTrackMovieView 
+  useTrackMovieView
 } from '@/hooks/useMovieDetails';
 import {
   getOptimizedImageUrl,
@@ -42,20 +42,20 @@ interface MovieDetailClientProps {
   slug: string;
 }
 
-export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({ 
-  initialData, 
-  slug 
+export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
+  initialData,
+  slug
 }) => {
   const router = useRouter();
   const [loadRelatedMovies, setLoadRelatedMovies] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const playerSectionRef = useRef<HTMLElement>(null);
-  
+
   const movieData = initialData;
   const { data: relatedMovies, isLoading: loadingRelated } = useRelatedMovies(
-    movieData, 
-    12, 
+    movieData,
+    12,
     { enabled: loadRelatedMovies }
   );
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
@@ -67,7 +67,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
       const timer = setTimeout(() => {
         setLoadRelatedMovies(true);
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [movieData?.movie]);
@@ -137,13 +137,12 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
   const breadcrumbItems = [
     {
       label: movie.type === 'single' ? 'Phim Lẻ' :
-             movie.type === 'series' ? 'Phim Bộ' :
-             movie.type === 'hoathinh' ? 'Hoạt Hình' : 'Phim',
-      href: `/danh-sach/${
-        movie.type === 'single' ? 'phim-le' :
+        movie.type === 'series' ? 'Phim Bộ' :
+          movie.type === 'hoathinh' ? 'Hoạt Hình' : 'Phim',
+      href: `/danh-sach/${movie.type === 'single' ? 'phim-le' :
         movie.type === 'series' ? 'phim-bo' :
-        movie.type === 'hoathinh' ? 'hoat-hinh' : 'phim-le'
-      }`
+          movie.type === 'hoathinh' ? 'hoat-hinh' : 'phim-le'
+        }`
     },
     { label: decodeHtmlEntities(movie.name), href: `/phim/${movie.slug}`, isCurrent: true }
   ];
@@ -161,7 +160,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
         {/* Hero Section with Movie Details */}
         <section className="relative">
           {/* Background Image */}
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${backdropUrl})` }}
           >
@@ -181,10 +180,10 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                     className="w-full rounded-xl shadow-2xl border border-white/10"
                     loading="lazy"
                   />
-                  
+
                   {/* Quality Badge */}
                   {movie.quality && (
-                    <Badge 
+                    <Badge
                       className={cn(
                         'absolute top-3 right-3 font-bold',
                         getQualityBadgeColor(movie.quality)
@@ -196,7 +195,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
 
                   {/* Episode Current */}
                   {movie.episode_current && (
-                    <Badge 
+                    <Badge
                       variant="info"
                       className="absolute top-3 left-3 font-bold"
                     >
@@ -228,7 +227,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                       <span>{formatYear(movie.year)}</span>
                     </div>
                   )}
-                  
+
                   {movie.time && (
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5" />
@@ -257,7 +256,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                 {/* Language Badge */}
                 {movie.lang && (
                   <div className="flex flex-wrap gap-2">
-                    <Badge 
+                    <Badge
                       className={cn(
                         'text-sm font-medium',
                         getLanguageBadgeColor(movie.lang)
@@ -274,9 +273,9 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                     <h3 className="text-lg font-semibold text-white">Thể loại:</h3>
                     <div className="flex flex-wrap gap-2">
                       {movie.category.map((cat, index) => (
-                        <Badge 
-                          key={cat._id || `category-${index}`} 
-                          variant="secondary" 
+                        <Badge
+                          key={cat._id || `category-${index}`}
+                          variant="secondary"
                           className="text-sm hover:bg-red-600 hover:text-white transition-colors cursor-pointer"
                           onClick={() => router.push(`/the-loai/${cat.slug}`)}
                         >
@@ -293,9 +292,9 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                     <h3 className="text-lg font-semibold text-white">Quốc gia:</h3>
                     <div className="flex flex-wrap gap-2">
                       {movie.country.map((country, index) => (
-                        <Badge 
-                          key={country._id || `country-${index}`} 
-                          variant="secondary" 
+                        <Badge
+                          key={country._id || `country-${index}`}
+                          variant="secondary"
                           className="text-sm hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
                           onClick={() => router.push(`/quoc-gia/${country.slug}`)}
                         >
@@ -338,7 +337,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                 {movie.content && (
                   <div className="space-y-3">
                     <h3 className="text-lg font-semibold text-white">Nội dung phim:</h3>
-                    <div 
+                    <div
                       className="text-gray-300 leading-relaxed prose prose-invert max-w-none"
                       dangerouslySetInnerHTML={{ __html: movie.content }}
                     />
@@ -347,8 +346,8 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     className="bg-red-600 hover:bg-red-700 text-white font-bold"
                     onClick={() => setShowPlayer(!showPlayer)}
                   >
@@ -358,9 +357,9 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
 
                   {/* Trailer Button */}
                   {movie.trailer_url && (
-                    <Button 
-                      size="lg" 
-                      variant="outline" 
+                    <Button
+                      size="lg"
+                      variant="outline"
                       className="border-white/20 text-white hover:bg-white/10"
                       onClick={() => window.open(movie.trailer_url, '_blank')}
                     >
@@ -368,10 +367,10 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                       Xem Trailer
                     </Button>
                   )}
-                  
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
+
+                  <Button
+                    size="lg"
+                    variant="outline"
                     className="border-white/20 text-white hover:bg-white/10"
                     onClick={handleFavoriteToggle}
                   >
@@ -383,9 +382,9 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                     {isFav ? 'Đã yêu thích' : 'Yêu thích'}
                   </Button>
 
-                  <Button 
-                    size="lg" 
-                    variant="ghost" 
+                  <Button
+                    size="lg"
+                    variant="ghost"
                     className="text-white hover:bg-white/10"
                     onClick={handleShare}
                   >
@@ -421,17 +420,16 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                   <Play className="w-6 h-6" />
                   Phát Phim
                 </h2>
-                
+
                 {episodes && episodes.length > 0 ? (
-                  <EpisodePlayer
+                  <EpisodeIframePlayer
                     episodes={episodes}
                     movieTitle={movie.name}
-                    poster={posterUrl}
                   />
                 ) : (
-                  <VideoPlayer
+                  <IframePlayer
+                    embedUrl={episodes?.[0]?.server_data?.[0]?.link_embed}
                     title={movie.name}
-                    poster={posterUrl}
                     className="w-full"
                   />
                 )}
