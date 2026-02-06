@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from './Button';
@@ -66,16 +67,16 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    const modalContent = (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100]"
                 onClick={handleClose}
             />
 
             {/* Modal */}
-            <div className="relative bg-slate-900 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl my-auto">
+            <div className="relative bg-slate-900 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl my-auto z-[101]">
                 {/* Close button */}
                 <button
                     onClick={handleClose}
@@ -208,4 +209,11 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
             </div>
         </div>
     );
+
+    // Use portal to render at document.body level
+    if (typeof document !== 'undefined') {
+        return createPortal(modalContent, document.body);
+    }
+
+    return null;
 }
