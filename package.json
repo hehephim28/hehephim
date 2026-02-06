@@ -13,6 +13,7 @@
     "deploy": "npm run build"
   },
   "dependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tanstack/react-query": "^5.85.3",
     "axios": "^1.11.0",
     "clsx": "^2.1.1",
