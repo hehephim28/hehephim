@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Play, Pause, RefreshCw, Send, Users, Share2, Copy, Check, ArrowLeft } from 'lucide-react';
