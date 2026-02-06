@@ -1,0 +1,25 @@
+# HeHePhim Durable Objects Worker
+# This worker is deployed separately from Pages to provide DO for watch party
+name = "hehephim-do"
+main = "src/worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Durable Objects for watch party rooms
+[durable_objects]
+bindings = [
+  { name = "ROOMS", class_name = "RoomDO" }
+]
+
+# DO migrations - use SQLite storage for free plan
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RoomDO"]
+
+# Note: D1 binding should be configured in Cloudflare Dashboard
+# Variable name: DB
+# Database: hehephim_db
+[[d1_databases]]
+binding = "DB"
+database_name = "hehephim-db"
+database_id = "cbc8b95d-9219-4312-8a68-46603b6af1b7" 

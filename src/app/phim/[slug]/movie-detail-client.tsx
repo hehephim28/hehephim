@@ -9,10 +9,12 @@ import {
   Globe,
   Clock,
   Users,
+  Users2,
   Film,
   Share2,
   Heart,
-  HeartIcon
+  HeartIcon,
+  Loader2
 } from 'lucide-react';
 
 import { Layout } from '@/components/layout/Layout';
@@ -60,6 +62,7 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
   );
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
   const trackView = useTrackMovieView();
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
 
   // Progressive loading: load related movies after component mounts
   useEffect(() => {
@@ -131,6 +134,33 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
       navigator.clipboard.writeText(window.location.href);
       setShowCopied(true);
       setTimeout(() => setShowCopied(false), 2000);
+    }
+  };
+
+  const handleWatchTogether = async () => {
+    if (isCreatingRoom) return;
+    setIsCreatingRoom(true);
+
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ movieId: movie.slug }),
+      });
+
+      const data = await res.json() as { roomId?: string; message?: string };
+
+      if (res.ok && data.roomId) {
+        router.push(`/room/${data.roomId}`);
+      } else {
+        alert(data.message || 'Bạn cần đăng nhập để tạo phòng xem chung');
+      }
+    } catch (e) {
+      console.error('Create room error:', e);
+      alert('Đã xảy ra lỗi khi tạo phòng');
+    } finally {
+      setIsCreatingRoom(false);
     }
   };
 
@@ -380,6 +410,21 @@ export const MovieDetailClient: React.FC<MovieDetailClientProps> = ({
                       <Heart className="w-6 h-6 mr-2" />
                     )}
                     {isFav ? 'Đã yêu thích' : 'Yêu thích'}
+                  </Button>
+
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-white/20 text-white hover:bg-white/10"
+                    onClick={handleWatchTogether}
+                    disabled={isCreatingRoom}
+                  >
+                    {isCreatingRoom ? (
+                      <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                    ) : (
+                      <Users2 className="w-6 h-6 mr-2" />
+                    )}
+                    Xem chung
                   </Button>
 
                   <Button

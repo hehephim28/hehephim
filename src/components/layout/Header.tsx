@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown, Search } from 'lucide-react';
+import { Menu, X, ChevronDown, Search, User, LogOut } from 'lucide-react';
 import { Button } from '../ui';
 import { HeaderSearchBar } from '../features';
+import { AuthModal } from '../ui/AuthModal';
 import { useNavigationMetadata } from '../../hooks/useMetadata';
+import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
 
 // Utility function to prevent body scroll without losing scrollbar
@@ -36,11 +38,17 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
   const [mobileGenreOpen, setMobileGenreOpen] = useState(false);
   const [mobileCountryOpen, setMobileCountryOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const pathname = usePathname();
+
+  // Auth state
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
 
   // Refs for dropdown elements
   const genreDropdownRef = useRef<HTMLDivElement>(null);
   const countryDropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
 
   // Get metadata for dropdown
   const { genres, countries } = useNavigationMetadata();
@@ -56,6 +64,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
       }
       if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
         setIsCountryDropdownOpen(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
       }
     };
 
@@ -282,6 +293,59 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
               <span className="sr-only">Search</span>
             </Button>
           )}
+
+          {/* Desktop Auth Button / User Menu */}
+          <div className="hidden md:block ml-4" ref={userDropdownRef}>
+            {authLoading ? (
+              <div className="w-8 h-8 bg-slate-700 rounded-full animate-pulse" />
+            ) : isAuthenticated && user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white text-sm font-bold">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-white text-sm font-medium max-w-[100px] truncate">
+                    {user.username}
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 text-gray-400 transition-transform",
+                    userDropdownOpen && "rotate-180"
+                  )} />
+                </button>
+
+                {userDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-50 py-2">
+                    <div className="px-4 py-2 border-b border-slate-700">
+                      <p className="text-white font-medium truncate">{user.username}</p>
+                      <p className="text-gray-400 text-sm truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setUserDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white hover:bg-slate-700 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => setAuthModalOpen(true)}
+                leftIcon={<User className="w-4 h-4" />}
+              >
+                Đăng nhập
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Mobile Search Overlay - Overlays on top of header with better spacing */}
@@ -395,6 +459,12 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
           </div>
         )}
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </header>
   );
 };
