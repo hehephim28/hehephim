@@ -113,6 +113,16 @@ export class RoomDO {
             return this.handleInit(request);
         }
 
+        // HTTP: /chat - Chat messages
+        if (path.endsWith('/chat')) {
+            if (request.method === 'GET') {
+                return this.handleGetChat();
+            }
+            if (request.method === 'POST') {
+                return this.handlePostChat(request);
+            }
+        }
+
         return new Response('Not found', { status: 404 });
     }
 
@@ -269,6 +279,45 @@ export class RoomDO {
         await this.state.storage.put('room', next);
         this.broadcast({ type: 'SEEK', time: next.position });
         return Response.json({ ok: true });
+    }
+
+    /**
+     * GET /chat - Return recent chat messages
+     */
+    private async handleGetChat(): Promise<Response> {
+        const messages = await this.state.storage.get<ChatMessage[]>('chat') ?? [];
+        return Response.json({ messages: messages.slice(-100) });
+    }
+
+    /**
+     * POST /chat - Add a chat message
+     */
+    private async handlePostChat(request: Request): Promise<Response> {
+        const body = await request.json().catch(() => ({})) as { user?: string; text?: string };
+
+        if (!body.text || body.text.trim() === '') {
+            return Response.json({ error: 'Empty message' }, { status: 400 });
+        }
+
+        const message: ChatMessage = {
+            type: 'CHAT',
+            user: body.user ?? 'Ẩn danh',
+            text: body.text.slice(0, 500),
+            ts: Date.now(),
+        };
+
+        // Get existing messages and add new one
+        const messages = await this.state.storage.get<ChatMessage[]>('chat') ?? [];
+        messages.push(message);
+
+        // Keep only last 100 messages
+        const trimmed = messages.slice(-100);
+        await this.state.storage.put('chat', trimmed);
+
+        // Also broadcast to WebSocket clients
+        this.broadcast(message);
+
+        return Response.json({ ok: true, message });
     }
 }
 
