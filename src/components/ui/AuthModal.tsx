@@ -67,15 +67,15 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm"
                 onClick={handleClose}
             />
 
             {/* Modal */}
-            <div className="relative bg-slate-900 rounded-2xl w-full max-w-md mx-4 border border-white/10 shadow-2xl">
+            <div className="relative bg-slate-900 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl my-auto">
                 {/* Close button */}
                 <button
                     onClick={handleClose}
@@ -89,8 +89,8 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
                     <button
                         onClick={() => handleSwitchTab('login')}
                         className={`flex-1 py-4 text-center font-medium transition-colors ${tab === 'login'
-                                ? 'text-red-500 border-b-2 border-red-500'
-                                : 'text-gray-400 hover:text-white'
+                            ? 'text-red-500 border-b-2 border-red-500'
+                            : 'text-gray-400 hover:text-white'
                             }`}
                     >
                         Đăng nhập
@@ -98,8 +98,8 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
                     <button
                         onClick={() => handleSwitchTab('register')}
                         className={`flex-1 py-4 text-center font-medium transition-colors ${tab === 'register'
-                                ? 'text-red-500 border-b-2 border-red-500'
-                                : 'text-gray-400 hover:text-white'
+                            ? 'text-red-500 border-b-2 border-red-500'
+                            : 'text-gray-400 hover:text-white'
                             }`}
                     >
                         Đăng ký
