@@ -53,7 +53,14 @@ export function useWatchParty({
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const connect = useCallback(() => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) return;
+        // Close existing connection first to prevent leaks
+        if (wsRef.current) {
+            if (wsRef.current.readyState === WebSocket.OPEN ||
+                wsRef.current.readyState === WebSocket.CONNECTING) {
+                wsRef.current.close();
+            }
+            wsRef.current = null;
+        }
 
         // Connect directly to DO worker
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -67,9 +74,9 @@ export function useWatchParty({
             setIsConnected(true);
             console.log('WebSocket connected');
 
-            // Fetch existing chat history
+            // Fetch existing chat history via Pages API (avoids CORS)
             try {
-                const res = await fetch(`https://${DO_WORKER_URL}/room/${roomId}/chat`);
+                const res = await fetch(`/room/${roomId}/chat`);
                 if (res.ok) {
                     const data = await res.json() as { messages?: ChatMessage[] };
                     if (data.messages && data.messages.length > 0) {
