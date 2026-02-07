@@ -131,11 +131,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
     setError(null);
 
     // Check if HLS is supported natively
+    // canPlayType returns: '' (no), 'maybe' (uncertain), 'probably' (yes)
+    // Only Safari returns 'probably' for HLS - Chrome returns 'maybe' but doesn't actually support it
     const nativeHls = video.canPlayType('application/vnd.apple.mpegurl');
     console.log('[VideoPlayer] Native HLS support:', nativeHls);
     console.log('[VideoPlayer] Hls.isSupported():', Hls.isSupported());
 
-    if (nativeHls) {
+    // Only use native HLS when browser says 'probably' (Safari)
+    // 'maybe' is not reliable - Chrome says 'maybe' but can't actually play HLS
+    if (nativeHls === 'probably') {
       // Native HLS support (Safari)
       console.log('[VideoPlayer] Using native HLS');
       video.src = videoSrc;
