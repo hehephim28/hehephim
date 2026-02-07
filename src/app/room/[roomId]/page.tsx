@@ -4,7 +4,7 @@ export const runtime = 'edge';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { RefreshCw, Send, Users, Copy, Check, ArrowLeft, MessageCircle, Tv, AlertCircle } from 'lucide-react';
+import { RefreshCw, Send, Users, Copy, Check, ArrowLeft, MessageCircle, Tv, AlertCircle, ChevronDown, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWatchParty } from '@/hooks/useWatchParty';
@@ -36,6 +36,9 @@ export default function WatchPartyRoomPage() {
     const [chatInput, setChatInput] = useState('');
     const [copied, setCopied] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
+    const [selectedServer, setSelectedServer] = useState(0);
+    const [selectedEpisode, setSelectedEpisode] = useState(0);
+    const [showEpisodes, setShowEpisodes] = useState(false);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const playerRef = useRef<VideoPlayerHandle>(null);
@@ -225,8 +228,12 @@ export default function WatchPartyRoomPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // Get M3U8 URL from episodes
-    const m3u8Url = episodes[0]?.server_data?.[0]?.link_m3u8;
+    // Get M3U8 URL from selected episode
+    const currentServer = episodes[selectedServer];
+    const currentEpisodeData = currentServer?.server_data?.[selectedEpisode];
+    const m3u8Url = currentEpisodeData?.link_m3u8;
+    const episodeName = currentEpisodeData?.name || 'Tập 1';
+    const hasMultipleEpisodes = (currentServer?.server_data?.length || 0) > 1 || episodes.length > 1;
 
     if (loading) {
         return (
@@ -357,6 +364,68 @@ export default function WatchPartyRoomPage() {
                                     </Button>
                                 </div>
                             </div>
+
+                            {/* Episode Selector */}
+                            {hasMultipleEpisodes && (
+                                <div className="mt-4 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden">
+                                    <button
+                                        onClick={() => setShowEpisodes(!showEpisodes)}
+                                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-700/50 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Play className="w-5 h-5 text-red-400" />
+                                            <span className="text-white font-medium">
+                                                Đang xem: {episodeName}
+                                            </span>
+                                        </div>
+                                        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showEpisodes ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {showEpisodes && (
+                                        <div className="border-t border-slate-700/50 p-4">
+                                            {/* Server Tabs */}
+                                            {episodes.length > 1 && (
+                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                    {episodes.map((ep, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => {
+                                                                setSelectedServer(idx);
+                                                                setSelectedEpisode(0);
+                                                            }}
+                                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedServer === idx
+                                                                    ? 'bg-red-600 text-white'
+                                                                    : 'bg-slate-700/50 text-gray-400 hover:bg-slate-700 hover:text-white'
+                                                                }`}
+                                                        >
+                                                            {ep.server_name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Episode Grid */}
+                                            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 max-h-60 overflow-y-auto">
+                                                {currentServer?.server_data.map((ep, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => {
+                                                            setSelectedEpisode(idx);
+                                                            setShowEpisodes(false);
+                                                        }}
+                                                        className={`px-2 py-2 rounded-lg text-sm font-medium transition-all ${selectedEpisode === idx
+                                                                ? 'bg-red-600 text-white ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900'
+                                                                : 'bg-slate-700/50 text-gray-300 hover:bg-slate-700 hover:text-white'
+                                                            }`}
+                                                    >
+                                                        {ep.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Movie Info */}
                             {movie && (

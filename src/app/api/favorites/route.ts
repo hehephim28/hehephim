@@ -47,7 +47,7 @@ async function verifyJWT(token: string, secret: string): Promise<any> {
 
 interface FavoriteRow {
     movie_id: string;
-    added_at: number;
+    created_at: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -74,12 +74,18 @@ export async function GET(request: NextRequest) {
         }
 
         const { results } = await env.DB.prepare(
-            'SELECT movie_id, added_at FROM favorites WHERE user_id = ? ORDER BY added_at DESC'
+            'SELECT movie_id, created_at FROM favorites WHERE user_id = ? ORDER BY created_at DESC'
         )
             .bind(payload.userId)
             .all<FavoriteRow>();
 
-        return NextResponse.json({ favorites: results || [] });
+        // Map to expected format for frontend
+        const favorites = (results || []).map((row: FavoriteRow) => ({
+            movieId: row.movie_id,
+            createdAt: row.created_at
+        }));
+
+        return NextResponse.json({ favorites });
     } catch (error: any) {
         console.error('Get favorites error:', error);
         return NextResponse.json(
