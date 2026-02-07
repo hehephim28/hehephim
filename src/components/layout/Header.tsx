@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown, Search, User, LogOut } from 'lucide-react';
+import { Menu, X, ChevronDown, Search, User, LogOut, Heart } from 'lucide-react';
 import { Button } from '../ui';
 import { HeaderSearchBar } from '../features';
 import { AuthModal } from '../ui/AuthModal';
@@ -322,6 +322,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                       <p className="text-white font-medium truncate">{user.username}</p>
                       <p className="text-gray-400 text-sm truncate">{user.email}</p>
                     </div>
+                    <Link
+                      href="/favorites"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white hover:bg-slate-700 transition-colors"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Phim yêu thích
+                    </Link>
                     <button
                       onClick={() => {
                         logout();

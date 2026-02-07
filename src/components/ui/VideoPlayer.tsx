@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   Play,
   Pause,
@@ -17,6 +17,16 @@ import { Button } from './Button';
 import { cn } from '../../utils/cn';
 import './VideoPlayer.css';
 
+// Imperative handle interface for external control
+export interface VideoPlayerHandle {
+  play: () => void;
+  pause: () => void;
+  seek: (time: number) => void;
+  getCurrentTime: () => number;
+  setCurrentTime: (time: number) => void;
+  isPlaying: () => boolean;
+}
+
 interface VideoPlayerProps {
   embedUrl?: string;
   m3u8Url?: string;
@@ -24,19 +34,26 @@ interface VideoPlayerProps {
   poster?: string;
   autoPlay?: boolean;
   className?: string;
+  /** Called when the video time updates (every ~250ms) */
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  /** Called when play state changes */
+  onPlayStateChange?: (isPlaying: boolean) => void;
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({
+export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
   embedUrl,
   m3u8Url,
   title,
   poster,
   autoPlay = false,
-  className
-}) => {
+  className,
+  onTimeUpdate,
+  onPlayStateChange,
+}, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
@@ -64,6 +81,32 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Use m3u8 URL directly instead of embed
   const videoSrc = m3u8Url || embedUrl;
+
+  // Expose video controls to parent via ref
+  useImperativeHandle(ref, () => ({
+    play: () => {
+      videoRef.current?.play().catch(console.error);
+    },
+    pause: () => {
+      videoRef.current?.pause();
+    },
+    seek: (time: number) => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = time;
+      }
+    },
+    getCurrentTime: () => {
+      return videoRef.current?.currentTime ?? 0;
+    },
+    setCurrentTime: (time: number) => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = time;
+      }
+    },
+    isPlaying: () => {
+      return isPlaying;
+    },
+  }), [isPlaying]);
 
   // Detect mobile device
   useEffect(() => {
@@ -106,11 +149,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setIsLoading(false);
         // Get available quality levels
-        const levels = hls.levels.map(level => 
+        const levels = hls.levels.map(level =>
           level.height ? `${level.height}p` : `${Math.round(level.bitrate / 1000)}k`
         );
         setQualities(['auto', ...levels]);
-        
+
         if (autoPlay) {
           video.play().catch(console.error);
         }
@@ -157,15 +200,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       // Don't update currentTime while dragging to prevent jumping
       if (!isDraggingProgress) {
         setCurrentTime(video.currentTime);
+        // Call the onTimeUpdate callback
+        onTimeUpdate?.(video.currentTime, video.duration);
       }
     };
 
     const handlePlay = () => {
       setIsPlaying(true);
+      onPlayStateChange?.(true);
     };
 
     const handlePause = () => {
       setIsPlaying(false);
+      onPlayStateChange?.(false);
     };
 
     const handleVolumeChange = () => {
@@ -221,11 +268,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // Auto-hide controls after inactivity
   const resetControlsTimeout = () => {
     setControlsVisible(true);
-    
+
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
-    
+
     // Only auto-hide on desktop when playing, mobile controls stay visible longer
     if (isPlaying && !isMobile) {
       controlsTimeoutRef.current = setTimeout(() => {
@@ -251,7 +298,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setShowCenterButton(false);
       resetControlsTimeout();
     }
-    
+
     return () => {
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
@@ -265,14 +312,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const target = event.target as Element;
 
       if (showQualityMenu &&
-          !target?.closest('.quality-menu') &&
-          !target?.closest('.quality-button')) {
+        !target?.closest('.quality-menu') &&
+        !target?.closest('.quality-button')) {
         setShowQualityMenu(false);
       }
 
       if (showSpeedMenu &&
-          !target?.closest('.speed-menu') &&
-          !target?.closest('.speed-button')) {
+        !target?.closest('.speed-menu') &&
+        !target?.closest('.speed-button')) {
         setShowSpeedMenu(false);
       }
     };
@@ -499,7 +546,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (isDraggingProgress) {
       document.addEventListener('mousemove', handleGlobalMouseMove);
       document.addEventListener('mouseup', handleGlobalMouseUp);
-      
+
       // Prevent text selection while dragging
       document.body.style.userSelect = 'none';
     } else {
@@ -518,10 +565,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const video = videoRef.current;
     if (!container || !video) return;
 
-    if (document.fullscreenElement || 
-        (document as any).webkitFullscreenElement || 
-        (document as any).mozFullScreenElement ||
-        (document as any).msFullscreenElement) {
+    if (document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement) {
       // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen();
@@ -535,7 +582,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else {
       // Enter fullscreen - try video element first for better mobile support
       const element = isMobile ? video : container;
-      
+
       if (element.requestFullscreen) {
         element.requestFullscreen().catch(console.error);
       } else if ((element as any).webkitRequestFullscreen) {
@@ -579,7 +626,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time % 3600) / 60);
     const seconds = Math.floor(time % 60);
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
@@ -665,7 +712,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }
 
   return (
-    <div 
+    <div
       className={cn(
         "relative w-full bg-black rounded-lg overflow-hidden group video-player",
         "aspect-video transition-all duration-300",
@@ -766,7 +813,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         )}
 
         {/* Main controls container - Netflix style */}
-        <div 
+        <div
           className="p-3 pb-2 sm:p-4 sm:pb-3 md:p-6 md:pb-4 space-y-2 sm:space-y-3 md:space-y-4"
           onMouseEnter={() => {
             if (!isPlaying) setShowCenterButton(false);
@@ -988,7 +1035,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       </div>
     </div>
   );
-};
+});
 
 interface EpisodePlayerProps {
   episodes: Array<{
@@ -1041,8 +1088,8 @@ export const EpisodePlayer: React.FC<EpisodePlayerProps> = ({
     );
   }
 
-  const episodeTitle = currentEpisode 
-    ? `${movieTitle} - ${currentEpisode.name}` 
+  const episodeTitle = currentEpisode
+    ? `${movieTitle} - ${currentEpisode.name}`
     : movieTitle;
 
   return (
@@ -1102,7 +1149,7 @@ export const EpisodePlayer: React.FC<EpisodePlayerProps> = ({
               )} />
             </Button>
           </div>
-          
+
           {showEpisodes && (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 max-h-64 overflow-y-auto custom-scrollbar p-1">
               {currentServer.server_data.map((episode, episodeIndex) => (
@@ -1113,8 +1160,8 @@ export const EpisodePlayer: React.FC<EpisodePlayerProps> = ({
                   onClick={() => handleEpisodeChange(episodeIndex)}
                   className={cn(
                     "h-auto py-3 px-2 text-center transition-colors duration-200 relative",
-                    selectedEpisode === episodeIndex 
-                      ? "shadow-lg shadow-red-500/30" 
+                    selectedEpisode === episodeIndex
+                      ? "shadow-lg shadow-red-500/30"
                       : "hover:bg-slate-600 hover:shadow-md hover:shadow-red-400/20"
                   )}
                 >
