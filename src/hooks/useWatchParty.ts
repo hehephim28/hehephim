@@ -51,91 +51,121 @@ export function useWatchParty({
     const [state, setState] = useState<WatchPartyState | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isUnmountedRef = useRef(false);
 
-    const connect = useCallback(() => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    // Store callbacks in refs to avoid recreating connect function
+    const callbacksRef = useRef({ onStateChange, onPlay, onPause, onSeek });
+    callbacksRef.current = { onStateChange, onPlay, onPause, onSeek };
 
-        // Connect directly to DO worker
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${DO_WORKER_URL}/room/${roomId}/ws`;
-
-        console.log('Connecting to WebSocket:', wsUrl);
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-            setIsConnected(true);
-            console.log('WebSocket connected');
-        };
-
-        ws.onmessage = (event) => {
-            try {
-                const data: WSMessage = JSON.parse(event.data);
-
-                switch (data.type) {
-                    case 'STATE':
-                        const stateMsg = data as ControlMessage;
-                        const newState: WatchPartyState = {
-                            movieId: stateMsg.movieId ?? null,
-                            isPlaying: stateMsg.isPlaying ?? false,
-                            serverTime: stateMsg.serverTime ?? 0,
-                        };
-                        setState(newState);
-                        onStateChange?.(newState);
-                        break;
-
-                    case 'PLAY':
-                        onPlay?.(data.time ?? 0);
-                        setState((prev) => prev ? { ...prev, isPlaying: true, serverTime: data.time ?? 0 } : prev);
-                        break;
-
-                    case 'PAUSE':
-                        onPause?.(data.time ?? 0);
-                        setState((prev) => prev ? { ...prev, isPlaying: false, serverTime: data.time ?? 0 } : prev);
-                        break;
-
-                    case 'SEEK':
-                        onSeek?.(data.time ?? 0);
-                        setState((prev) => prev ? { ...prev, serverTime: data.time ?? 0 } : prev);
-                        break;
-
-                    case 'CHAT':
-                        setMessages((prev) => [...prev, data as ChatMessage].slice(-100));
-                        break;
-                }
-            } catch (e) {
-                console.error('Failed to parse WS message:', e);
-            }
-        };
-
-        ws.onclose = () => {
-            setIsConnected(false);
-            console.log('WebSocket disconnected');
-
-            // Auto-reconnect after 3 seconds
-            reconnectTimeoutRef.current = setTimeout(() => {
-                connect();
-            }, 3000);
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
-    }, [roomId, onStateChange, onPlay, onPause, onSeek]);
-
-    // Connect on mount
+    // Connect on mount, disconnect on unmount - only depends on roomId
     useEffect(() => {
-        connect();
+        isUnmountedRef.current = false;
 
-        return () => {
-            if (reconnectTimeoutRef.current) {
-                clearTimeout(reconnectTimeoutRef.current);
-            }
+        const connect = () => {
+            // Don't connect if unmounted or already connected
+            if (isUnmountedRef.current) return;
+            if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+            // Close existing connection if any
             if (wsRef.current) {
                 wsRef.current.close();
+                wsRef.current = null;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${DO_WORKER_URL}/room/${roomId}/ws`;
+
+            console.log('Connecting to WebSocket:', wsUrl);
+            const ws = new WebSocket(wsUrl);
+            wsRef.current = ws;
+
+            ws.onopen = () => {
+                if (isUnmountedRef.current) {
+                    ws.close();
+                    return;
+                }
+                setIsConnected(true);
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                if (isUnmountedRef.current) return;
+
+                try {
+                    const data: WSMessage = JSON.parse(event.data);
+                    const callbacks = callbacksRef.current;
+
+                    switch (data.type) {
+                        case 'STATE':
+                            const stateMsg = data as ControlMessage;
+                            const newState: WatchPartyState = {
+                                movieId: stateMsg.movieId ?? null,
+                                isPlaying: stateMsg.isPlaying ?? false,
+                                serverTime: stateMsg.serverTime ?? 0,
+                            };
+                            setState(newState);
+                            callbacks.onStateChange?.(newState);
+                            break;
+
+                        case 'PLAY':
+                            callbacks.onPlay?.(data.time ?? 0);
+                            setState((prev) => prev ? { ...prev, isPlaying: true, serverTime: data.time ?? 0 } : prev);
+                            break;
+
+                        case 'PAUSE':
+                            callbacks.onPause?.(data.time ?? 0);
+                            setState((prev) => prev ? { ...prev, isPlaying: false, serverTime: data.time ?? 0 } : prev);
+                            break;
+
+                        case 'SEEK':
+                            callbacks.onSeek?.(data.time ?? 0);
+                            setState((prev) => prev ? { ...prev, serverTime: data.time ?? 0 } : prev);
+                            break;
+
+                        case 'CHAT':
+                            setMessages((prev) => [...prev, data as ChatMessage].slice(-100));
+                            break;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse WS message:', e);
+                }
+            };
+
+            ws.onclose = () => {
+                setIsConnected(false);
+                console.log('WebSocket disconnected');
+
+                // Only auto-reconnect if not unmounted
+                if (!isUnmountedRef.current) {
+                    reconnectTimeoutRef.current = setTimeout(() => {
+                        connect();
+                    }, 3000);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        };
+
+        connect();
+
+        // Cleanup function
+        return () => {
+            console.log('useWatchParty cleanup - closing WebSocket');
+            isUnmountedRef.current = true;
+
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+            }
+
+            if (wsRef.current) {
+                wsRef.current.close();
+                wsRef.current = null;
             }
         };
-    }, [connect]);
+    }, [roomId]); // Only roomId as dependency!
 
     // Send chat message via WebSocket
     const sendChat = useCallback((text: string) => {
