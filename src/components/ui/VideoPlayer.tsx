@@ -143,6 +143,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
       });
 
       hlsRef.current = hls;
+      console.log('[HLS] Loading source:', videoSrc);
       hls.loadSource(videoSrc);
       hls.attachMedia(video);
 

@@ -240,6 +240,10 @@ export default function WatchPartyRoomPage() {
         ? `/api/proxy/m3u8?url=${encodeURIComponent(m3u8Url)}`
         : undefined;
 
+    // Debug: Log both original and proxied URLs
+    console.log('[DEBUG] Original M3U8:', m3u8Url);
+    console.log('[DEBUG] Proxied M3U8:', proxiedM3u8Url);
+
     if (loading) {
         return (
             <Layout>
