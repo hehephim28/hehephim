@@ -151,9 +151,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             );
         }
 
+        // Delete from D1 database
         await env.DB.prepare('DELETE FROM rooms WHERE room_id = ?')
             .bind(roomId)
             .run();
+
+        // Delete DO storage (wake up DO instance and delete all data)
+        try {
+            const doId = env.ROOMS.idFromName(roomId);
+            const stub = env.ROOMS.get(doId);
+            await stub.fetch(new Request('https://do/delete', { method: 'POST' }));
+        } catch (e) {
+            console.error('Failed to delete DO storage:', e);
+            // Don't fail the request if DO cleanup fails
+        }
 
         return NextResponse.json({ success: true, message: 'Đã xóa phòng' });
     } catch (error: any) {

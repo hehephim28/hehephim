@@ -63,9 +63,22 @@ export function useWatchParty({
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
-        ws.onopen = () => {
+        ws.onopen = async () => {
             setIsConnected(true);
             console.log('WebSocket connected');
+
+            // Fetch existing chat history
+            try {
+                const res = await fetch(`https://${DO_WORKER_URL}/room/${roomId}/chat`);
+                if (res.ok) {
+                    const data = await res.json() as { messages?: ChatMessage[] };
+                    if (data.messages && data.messages.length > 0) {
+                        setMessages(data.messages);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch chat history:', e);
+            }
         };
 
         ws.onmessage = (event) => {

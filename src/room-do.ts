@@ -123,6 +123,11 @@ export class RoomDO {
             }
         }
 
+        // HTTP: /delete - Delete all room data
+        if (path.endsWith('/delete') && request.method === 'POST') {
+            return this.handleDelete();
+        }
+
         return new Response('Not found', { status: 404 });
     }
 
@@ -318,6 +323,26 @@ export class RoomDO {
         this.broadcast(message);
 
         return Response.json({ ok: true, message });
+    }
+
+    /**
+     * POST /delete - Delete all room storage
+     */
+    private async handleDelete(): Promise<Response> {
+        // Close all WebSocket connections
+        for (const ws of this.sockets) {
+            try {
+                ws.close(1000, 'Room deleted');
+            } catch {
+                // Ignore errors
+            }
+        }
+        this.sockets.clear();
+
+        // Delete ALL storage for this DO instance
+        await this.state.storage.deleteAll();
+
+        return Response.json({ ok: true, message: 'Room storage deleted' });
     }
 }
 
