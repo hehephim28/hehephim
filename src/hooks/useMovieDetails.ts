@@ -44,14 +44,14 @@ export function useRelatedMovies(
   const movieSlug = movieDetail?.movie?.slug;
 
   return useQuery({
-    queryKey: queryKeys.categories.bySlug(primaryCategory || '', { 
+    queryKey: queryKeys.categories.bySlug(primaryCategory || '', {
       limit,
       page: 1,
-      exclude: movieSlug 
+      exclude: movieSlug
     }),
     queryFn: async () => {
       if (!primaryCategory) throw new Error('No category available');
-      
+
       const response = await movieService.getMoviesByGenre(primaryCategory, {
         limit,
         page: 1,
@@ -80,27 +80,27 @@ export function useTrackMovieView() {
   return useMutation({
     mutationFn: async (slug: string) => {
       if (typeof window === 'undefined') return { slug, timestamp: Date.now(), skipped: true };
-      
+
       // Check if this movie was already tracked recently (within last 5 minutes)
       const lastTracked = localStorage.getItem(`lastTracked_${slug}`);
       const now = Date.now();
-      
+
       if (lastTracked && (now - parseInt(lastTracked)) < 5 * 60 * 1000) {
         // Skip tracking if already tracked within 5 minutes
         return { slug, timestamp: parseInt(lastTracked), skipped: true };
       }
-      
+
       // Store in localStorage for recently viewed
       const recentlyViewed = JSON.parse(
         localStorage.getItem('recentlyViewed') || '[]'
       );
-      
+
       const updatedViewed = [slug, ...recentlyViewed.filter((s: string) => s !== slug)]
         .slice(0, 20); // Keep last 20 viewed movies
-      
+
       localStorage.setItem('recentlyViewed', JSON.stringify(updatedViewed));
       localStorage.setItem(`lastTracked_${slug}`, now.toString());
-      
+
       return { slug, timestamp: now };
     },
     onSuccess: (data) => {
@@ -122,16 +122,16 @@ export function useRecentlyViewed() {
       if (typeof window === 'undefined') return [];
       const stored = localStorage.getItem('recentlyViewed');
       if (!stored) return [];
-      
+
       const slugs: string[] = JSON.parse(stored);
-      
+
       // Fetch details for recently viewed movies
       const movieDetails = await Promise.allSettled(
         slugs.slice(0, 10).map(slug => movieService.getMovieDetails(slug))
       );
-      
+
       return movieDetails
-        .filter((result): result is PromiseFulfilledResult<MovieDetailResponse> => 
+        .filter((result): result is PromiseFulfilledResult<MovieDetailResponse> =>
           result.status === 'fulfilled'
         )
         .map(result => result.value.movie);
@@ -142,57 +142,95 @@ export function useRecentlyViewed() {
 }
 
 /**
- * Hook to add/remove movies from favorites (localStorage)
+ * Hook to add/remove movies from favorites (server API)
  */
 export function useFavorites() {
   const queryClient = useQueryClient();
 
-  const getFavorites = () => {
+  // Get local favorites cache (for optimistic UI)
+  const getLocalFavorites = () => {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem('favorites');
     return stored ? JSON.parse(stored) : [];
   };
 
+  // Sync local cache
+  const setLocalFavorites = (slugs: string[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('favorites', JSON.stringify(slugs));
+    }
+  };
+
   const addToFavorites = useMutation({
     mutationFn: async (slug: string) => {
-      if (typeof window === 'undefined') return [];
-      const favorites = getFavorites();
+      console.log('[Favorites] Adding to favorites:', slug);
+      const response = await fetch(`/api/favorites/${slug}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Không thể thêm vào yêu thích');
+      }
+
+      // Update local cache
+      const favorites = getLocalFavorites();
       if (!favorites.includes(slug)) {
         favorites.push(slug);
-        localStorage.setItem('favorites', JSON.stringify(favorites));
+        setLocalFavorites(favorites);
       }
-      return favorites;
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (error: Error) => {
+      console.error('[Favorites] Add error:', error.message);
     },
   });
 
   const removeFromFavorites = useMutation({
     mutationFn: async (slug: string) => {
-      if (typeof window === 'undefined') return [];
-      const favorites = getFavorites();
+      console.log('[Favorites] Removing from favorites:', slug);
+      const response = await fetch(`/api/favorites/${slug}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Không thể xóa khỏi yêu thích');
+      }
+
+      // Update local cache
+      const favorites = getLocalFavorites();
       const updated = favorites.filter((s: string) => s !== slug);
-      localStorage.setItem('favorites', JSON.stringify(updated));
-      return updated;
+      setLocalFavorites(updated);
+
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (error: Error) => {
+      console.error('[Favorites] Remove error:', error.message);
     },
   });
 
   const favoritesQuery = useQuery({
     queryKey: ['favorites'],
     queryFn: async () => {
-      const slugs = getFavorites();
+      const slugs = getLocalFavorites();
       if (slugs.length === 0) return [];
 
       const movieDetails = await Promise.allSettled(
         slugs.map((slug: string) => movieService.getMovieDetails(slug))
       );
-      
+
       return movieDetails
-        .filter((result): result is PromiseFulfilledResult<MovieDetailResponse> => 
+        .filter((result): result is PromiseFulfilledResult<MovieDetailResponse> =>
           result.status === 'fulfilled'
         )
         .map(result => result.value.movie);
@@ -201,7 +239,7 @@ export function useFavorites() {
   });
 
   const isFavorite = (slug: string) => {
-    return getFavorites().includes(slug);
+    return getLocalFavorites().includes(slug);
   };
 
   return {
