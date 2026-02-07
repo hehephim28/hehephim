@@ -4,7 +4,7 @@ export const runtime = 'edge';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Play, Pause, RefreshCw, Send, Users, Copy, Check, ArrowLeft, MessageCircle, Tv } from 'lucide-react';
+import { RefreshCw, Send, Users, Copy, Check, ArrowLeft, MessageCircle, Tv, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWatchParty } from '@/hooks/useWatchParty';
@@ -35,43 +35,49 @@ export default function WatchPartyRoomPage() {
     const [error, setError] = useState<string | null>(null);
     const [chatInput, setChatInput] = useState('');
     const [copied, setCopied] = useState(false);
-    const [displayTime, setDisplayTime] = useState(0);
-    const [displayPlaying, setDisplayPlaying] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const playerRef = useRef<VideoPlayerHandle>(null);
+    // Flag to prevent feedback loop when receiving server updates
+    const isServerUpdateRef = useRef(false);
 
     const isOwner = user?.id === roomInfo?.ownerId;
     const username = user?.username || 'Khách';
 
-    // Callbacks for watch party events - now actually control the player!
-    const handlePlay = useCallback((time: number) => {
+    // WebSocket callbacks - these are called when server sends updates
+    const handleServerPlay = useCallback((time: number) => {
+        console.log('[WS] Server PLAY:', time);
+        isServerUpdateRef.current = true;
         if (playerRef.current) {
             playerRef.current.setCurrentTime(time);
             playerRef.current.play();
         }
-        setDisplayTime(time);
-        setDisplayPlaying(true);
+        setTimeout(() => { isServerUpdateRef.current = false; }, 500);
     }, []);
 
-    const handlePause = useCallback((time: number) => {
+    const handleServerPause = useCallback((time: number) => {
+        console.log('[WS] Server PAUSE:', time);
+        isServerUpdateRef.current = true;
         if (playerRef.current) {
             playerRef.current.pause();
             playerRef.current.setCurrentTime(time);
         }
-        setDisplayTime(time);
-        setDisplayPlaying(false);
+        setTimeout(() => { isServerUpdateRef.current = false; }, 500);
     }, []);
 
-    const handleSeek = useCallback((time: number) => {
+    const handleServerSeek = useCallback((time: number) => {
+        console.log('[WS] Server SEEK:', time);
+        isServerUpdateRef.current = true;
         if (playerRef.current) {
             playerRef.current.setCurrentTime(time);
         }
-        setDisplayTime(time);
+        setTimeout(() => { isServerUpdateRef.current = false; }, 500);
     }, []);
 
-    const handleStateChange = useCallback((state: any) => {
-        // Apply initial state when connecting
+    const handleServerStateChange = useCallback((state: { serverTime: number; isPlaying: boolean }) => {
+        console.log('[WS] Server STATE:', state);
+        isServerUpdateRef.current = true;
         if (playerRef.current) {
             playerRef.current.setCurrentTime(state.serverTime);
             if (state.isPlaying) {
@@ -80,8 +86,7 @@ export default function WatchPartyRoomPage() {
                 playerRef.current.pause();
             }
         }
-        setDisplayTime(state.serverTime);
-        setDisplayPlaying(state.isPlaying);
+        setTimeout(() => { isServerUpdateRef.current = false; }, 500);
     }, []);
 
     const {
@@ -92,17 +97,16 @@ export default function WatchPartyRoomPage() {
     } = useWatchParty({
         roomId,
         username,
-        onPlay: handlePlay,
-        onPause: handlePause,
-        onSeek: handleSeek,
-        onStateChange: handleStateChange,
+        onPlay: handleServerPlay,
+        onPause: handleServerPause,
+        onSeek: handleServerSeek,
+        onStateChange: handleServerStateChange,
     });
 
     // Fetch room info and movie data
     useEffect(() => {
         async function fetchData() {
             try {
-                // Get room info
                 const roomRes = await fetch(`/api/rooms/${roomId}`);
                 if (!roomRes.ok) {
                     throw new Error('Phòng không tồn tại');
@@ -110,7 +114,6 @@ export default function WatchPartyRoomPage() {
                 const roomData = await roomRes.json() as { room: RoomInfo };
                 setRoomInfo(roomData.room);
 
-                // Get movie details
                 const movieData = await movieService.getMovieDetails(roomData.room.movieId);
                 setMovie(movieData.movie);
                 setEpisodes(movieData.episodes || []);
@@ -133,31 +136,67 @@ export default function WatchPartyRoomPage() {
         }
     }, [messages]);
 
-    // Host controls - send current player time
-    const sendPlay = async () => {
-        if (!isOwner) return;
+    // HOST: Send play command to server when player starts playing
+    const handlePlayerPlay = useCallback((isPlaying: boolean) => {
+        // Ignore if this is triggered by a server update
+        if (isServerUpdateRef.current) return;
+        // Only host can control
+        if (!isOwner || !roomInfo) return;
+
+        console.log('[HOST] Player state changed:', isPlaying);
         const currentTime = playerRef.current?.getCurrentTime() ?? 0;
-        try {
-            await fetch(`/room/${roomId}/play`, {
+
+        if (isPlaying) {
+            // Send PLAY command
+            fetch(`/room/${roomId}/play`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ movieId: roomInfo?.movieId, position: currentTime }),
-            });
-        } catch (e) {
-            console.error('Play error:', e);
-        }
-    };
-
-    const sendPause = async () => {
-        if (!isOwner) return;
-        try {
-            await fetch(`/room/${roomId}/pause`, {
+                body: JSON.stringify({ movieId: roomInfo.movieId, position: currentTime }),
+            }).catch(console.error);
+        } else {
+            // Send PAUSE command
+            fetch(`/room/${roomId}/pause`, {
                 method: 'POST',
                 credentials: 'include',
-            });
+            }).catch(console.error);
+        }
+    }, [isOwner, roomId, roomInfo]);
+
+    // HOST: Send seek command when player seeks (debounced)
+    const seekTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const handlePlayerTimeUpdate = useCallback((currentTime: number, _duration: number) => {
+        // Ignore if this is triggered by a server update
+        if (isServerUpdateRef.current) return;
+        // Only host can control
+        if (!isOwner || !roomInfo) return;
+
+        // Debounce seek commands
+        if (seekTimeoutRef.current) {
+            clearTimeout(seekTimeoutRef.current);
+        }
+        // We'll send seek on significant jumps (detected in VideoPlayer)
+    }, [isOwner, roomInfo]);
+
+    // SYNC button: Fetch server state and apply to player
+    const handleSync = async () => {
+        setSyncStatus('syncing');
+        try {
+            const newState = await syncState();
+            console.log('[SYNC] Got state:', newState);
+            if (newState && playerRef.current) {
+                playerRef.current.setCurrentTime(newState.serverTime);
+                if (newState.isPlaying) {
+                    playerRef.current.play();
+                } else {
+                    playerRef.current.pause();
+                }
+                setSyncStatus('synced');
+                setTimeout(() => setSyncStatus('idle'), 2000);
+            }
         } catch (e) {
-            console.error('Pause error:', e);
+            console.error('Sync error:', e);
+            setSyncStatus('idle');
         }
     };
 
@@ -169,44 +208,11 @@ export default function WatchPartyRoomPage() {
         }
     };
 
-    const handleSync = async () => {
-        const newState = await syncState();
-        if (newState && playerRef.current) {
-            const currentPlayerTime = playerRef.current.getCurrentTime();
-            const serverTime = newState.serverTime;
-            const diff = Math.abs(currentPlayerTime - serverTime);
-
-            // Only hard-sync if difference is more than 1.5 seconds
-            if (diff > 1.5) {
-                playerRef.current.setCurrentTime(serverTime);
-            }
-
-            // Sync play/pause state
-            if (newState.isPlaying && !playerRef.current.isPlaying()) {
-                playerRef.current.play();
-            } else if (!newState.isPlaying && playerRef.current.isPlaying()) {
-                playerRef.current.pause();
-            }
-
-            setDisplayTime(serverTime);
-            setDisplayPlaying(newState.isPlaying);
-        }
-    };
-
     const handleCopyLink = () => {
         navigator.clipboard.writeText(window.location.href);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
-
-    // Track player time for display
-    const handleTimeUpdate = useCallback((time: number) => {
-        setDisplayTime(time);
-    }, []);
-
-    const handlePlayStateChange = useCallback((playing: boolean) => {
-        setDisplayPlaying(playing);
-    }, []);
 
     // Get M3U8 URL from episodes
     const m3u8Url = episodes[0]?.server_data?.[0]?.link_m3u8;
@@ -256,7 +262,7 @@ export default function WatchPartyRoomPage() {
                                         Phòng của {roomInfo?.ownerUsername}
                                         <span className="inline-flex items-center gap-1">
                                             {isConnected ?
-                                                <><span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span><span className="text-green-400">Đang kết nối</span></> :
+                                                <><span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span><span className="text-green-400">Đã kết nối</span></> :
                                                 <><span className="w-2 h-2 bg-red-400 rounded-full"></span><span className="text-red-400">Mất kết nối</span></>
                                             }
                                         </span>
@@ -293,8 +299,8 @@ export default function WatchPartyRoomPage() {
                                         title={movie?.name || 'Watch Party'}
                                         poster={movie?.poster_url}
                                         className="w-full"
-                                        onTimeUpdate={handleTimeUpdate}
-                                        onPlayStateChange={handlePlayStateChange}
+                                        onPlayStateChange={handlePlayerPlay}
+                                        onTimeUpdate={handlePlayerTimeUpdate}
                                     />
                                 ) : (
                                     <div className="w-full aspect-video flex items-center justify-center text-gray-500 bg-slate-900">
@@ -307,51 +313,37 @@ export default function WatchPartyRoomPage() {
                                 )}
                             </div>
 
-                            {/* Controls */}
-                            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700/50 shadow-xl">
+                            {/* Control Bar */}
+                            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-700/50 shadow-xl">
                                 <div className="flex flex-wrap items-center justify-between gap-4">
-                                    {/* Host Controls */}
-                                    {isOwner ? (
-                                        <div className="flex items-center gap-3">
-                                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium flex items-center gap-1.5">
-                                                <span className="text-lg">👑</span> Chủ phòng
+                                    {/* Role info */}
+                                    <div className="flex items-center gap-3">
+                                        {isOwner ? (
+                                            <span className="px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 rounded-full text-sm font-medium flex items-center gap-1.5 border border-yellow-500/30">
+                                                <span className="text-lg">👑</span> Chủ phòng - Điều khiển player để đồng bộ
                                             </span>
-                                            <Button
-                                                size="sm"
-                                                onClick={displayPlaying ? sendPause : sendPlay}
-                                                className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 shadow-lg shadow-red-600/30"
-                                                leftIcon={displayPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                                            >
-                                                {displayPlaying ? 'Tạm dừng' : 'Phát'}
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            <span className="px-3 py-1 bg-slate-700/50 text-gray-400 rounded-full text-sm">
-                                                Chỉ chủ phòng mới có thể điều khiển
+                                        ) : (
+                                            <span className="px-3 py-1.5 bg-slate-700/50 text-gray-400 rounded-full text-sm flex items-center gap-2">
+                                                <AlertCircle className="w-4 h-4" />
+                                                Nhấn Đồng bộ để khớp với chủ phòng
                                             </span>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
 
                                     {/* Sync Button */}
-                                    <div className="flex items-center gap-4">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={handleSync}
-                                            className="border-slate-600 hover:bg-slate-700 hover:border-slate-500"
-                                            leftIcon={<RefreshCw className="w-4 h-4" />}
-                                        >
-                                            Đồng bộ
-                                        </Button>
-
-                                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 rounded-lg">
-                                            <span className="text-gray-400 text-sm">Thời gian:</span>
-                                            <span className="text-white font-mono font-medium">
-                                                {Math.floor(displayTime / 60)}:{String(Math.floor(displayTime % 60)).padStart(2, '0')}
-                                            </span>
-                                        </div>
-                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant={syncStatus === 'synced' ? 'primary' : 'outline'}
+                                        onClick={handleSync}
+                                        disabled={syncStatus === 'syncing'}
+                                        className={syncStatus === 'synced'
+                                            ? 'bg-green-600 hover:bg-green-700 border-green-600'
+                                            : 'border-slate-600 hover:bg-slate-700 hover:border-slate-500'
+                                        }
+                                        leftIcon={<RefreshCw className={`w-4 h-4 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />}
+                                    >
+                                        {syncStatus === 'syncing' ? 'Đang đồng bộ...' : syncStatus === 'synced' ? 'Đã đồng bộ!' : 'Đồng bộ'}
+                                    </Button>
                                 </div>
                             </div>
 
