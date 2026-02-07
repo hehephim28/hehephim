@@ -124,14 +124,20 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
 
   useEffect(() => {
     const video = videoRef.current;
+    console.log('[VideoPlayer] useEffect triggered:', { video: !!video, videoSrc });
     if (!video || !videoSrc) return;
 
     setIsLoading(true);
     setError(null);
 
     // Check if HLS is supported natively
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    const nativeHls = video.canPlayType('application/vnd.apple.mpegurl');
+    console.log('[VideoPlayer] Native HLS support:', nativeHls);
+    console.log('[VideoPlayer] Hls.isSupported():', Hls.isSupported());
+
+    if (nativeHls) {
       // Native HLS support (Safari)
+      console.log('[VideoPlayer] Using native HLS');
       video.src = videoSrc;
       setIsLoading(false);
     } else if (Hls.isSupported()) {
