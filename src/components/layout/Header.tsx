@@ -462,6 +462,62 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                     </div>
                   )}
                 </div>
+
+                {/* Mobile Auth Section */}
+                <div className="pt-4 border-t border-slate-700">
+                  {authLoading ? (
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="w-8 h-8 bg-slate-700 rounded-full animate-pulse" />
+                      <div className="h-4 w-24 bg-slate-700 rounded animate-pulse" />
+                    </div>
+                  ) : isAuthenticated && user ? (
+                    <div className="space-y-3">
+                      {/* User Info */}
+                      <div className="flex items-center gap-3 py-2">
+                        <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white font-bold">
+                          {user.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{user.username}</p>
+                          <p className="text-gray-400 text-sm truncate max-w-[180px]">{user.email}</p>
+                        </div>
+                      </div>
+
+                      {/* Favorites Link */}
+                      <Link
+                        href="/favorites"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-2 py-2 text-slate-300 hover:text-red-400 transition-colors"
+                      >
+                        <Heart className="w-5 h-5" />
+                        Phim yêu thích
+                      </Link>
+
+                      {/* Logout Button */}
+                      <button
+                        onClick={() => {
+                          logout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 py-2 text-slate-300 hover:text-red-400 transition-colors w-full"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setAuthModalOpen(true);
+                      }}
+                      leftIcon={<User className="w-5 h-5" />}
+                    >
+                      Đăng nhập / Đăng ký
+                    </Button>
+                  )}
+                </div>
               </nav>
             </div>
           </div>

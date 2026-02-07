@@ -40,21 +40,28 @@ export default function FavoritesPage() {
                 }
 
                 const data = await res.json() as { favorites: FavoriteItem[] };
+                console.log('[Favorites] API response:', data);
                 setFavorites(data.favorites || []);
 
                 // Fetch movie details for each favorite
                 if (data.favorites && data.favorites.length > 0) {
                     const moviePromises = data.favorites.map(async (fav) => {
                         try {
+                            console.log('[Favorites] Fetching movie:', fav.movieId);
                             const movieData = await movieService.getMovieDetails(fav.movieId);
+                            console.log('[Favorites] Movie data:', movieData?.movie?.name);
                             return movieData.movie;
-                        } catch {
+                        } catch (error) {
+                            console.error('[Favorites] Failed to fetch movie:', fav.movieId, error);
                             return null;
                         }
                     });
 
                     const movieResults = await Promise.all(moviePromises);
+                    console.log('[Favorites] All movie results:', movieResults.length, 'movies fetched');
                     setMovies(movieResults.filter((m): m is MovieDetail => m !== null));
+                } else {
+                    console.log('[Favorites] No favorites found');
                 }
             } catch (e: any) {
                 setError(e.message || 'Đã xảy ra lỗi');
