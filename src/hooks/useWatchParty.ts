@@ -200,7 +200,7 @@ export function useWatchParty({
 
         // Cleanup function
         return () => {
-            console.log('[WS] useEffect cleanup');
+            console.log('[WS] useEffect cleanup, wsRef.current:', wsRef.current ? 'exists' : 'null');
             isUnmountedRef.current = true;
 
             if (reconnectTimeoutRef.current) {
@@ -209,8 +209,11 @@ export function useWatchParty({
             }
 
             if (wsRef.current) {
-                wsRef.current.close();
+                const ws = wsRef.current;
+                console.log('[WS] Closing WS, readyState:', ws.readyState);
+                ws.close(1000, 'Cleanup');
                 wsRef.current = null;
+                console.log('[WS] WS closed, wsRef set to null');
             }
         };
     }, [roomId]); // Only roomId as dependency!
