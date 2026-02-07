@@ -20,6 +20,7 @@ interface RoomInfo {
     ownerId: string;
     ownerUsername: string;
     movieId: string;
+    roomName: string;
     createdAt: number;
 }
 
@@ -283,7 +284,7 @@ export default function WatchPartyRoomPage() {
                                 </div>
                                 <div>
                                     <h1 className="text-white font-bold truncate max-w-md">
-                                        {movie?.name || 'Watch Party'}
+                                        {roomInfo?.roomName || movie?.name || 'Watch Party'}
                                     </h1>
                                     <p className="text-gray-400 text-sm flex items-center gap-2">
                                         Phòng của {roomInfo?.ownerUsername}

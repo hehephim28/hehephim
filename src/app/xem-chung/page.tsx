@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Users2, Plus, Search, Loader2, Film, ExternalLink, LogIn, Trash2, X } from 'lucide-react';
+import { Users2, Plus, Search, Loader2, Film, ExternalLink, LogIn, Trash2, X, Clock, Edit3 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,13 @@ import type { Movie } from '@/types/movie';
 interface Room {
     roomId: string;
     movieId: string;
+    roomName: string;
     createdAt: number;
+}
+
+interface RoomWithMovieInfo extends Room {
+    movieName?: string;
+    moviePoster?: string;
 }
 
 const MAX_ROOMS = 10;
@@ -26,11 +32,13 @@ export default function WatchTogetherPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Movie[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [rooms, setRooms] = useState<Room[]>([]);
+    const [rooms, setRooms] = useState<RoomWithMovieInfo[]>([]);
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [creatingRoom, setCreatingRoom] = useState(false);
     const [deletingRoom, setDeletingRoom] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+    const [roomName, setRoomName] = useState('');
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Fetch rooms on mount
@@ -80,7 +88,25 @@ export default function WatchTogetherPage() {
             const res = await fetch('/api/rooms', { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json() as { rooms: Room[] };
-                setRooms(data.rooms || []);
+                const roomsData = data.rooms || [];
+
+                // Fetch movie info for each room
+                const roomsWithMovieInfo = await Promise.all(
+                    roomsData.map(async (room) => {
+                        try {
+                            const movieData = await movieService.getMovieDetails(room.movieId);
+                            return {
+                                ...room,
+                                movieName: movieData.movie?.name,
+                                moviePoster: movieData.movie?.poster_url || movieData.movie?.thumb_url
+                            };
+                        } catch {
+                            return room;
+                        }
+                    })
+                );
+
+                setRooms(roomsWithMovieInfo);
             }
         } catch (err) {
             console.error('Failed to fetch rooms:', err);
@@ -89,7 +115,14 @@ export default function WatchTogetherPage() {
         }
     };
 
-    const handleCreateRoom = async (movie: Movie) => {
+    const handleSelectMovie = (movie: Movie) => {
+        setSelectedMovie(movie);
+        setRoomName(`Phòng xem ${movie.name}`);
+    };
+
+    const handleCreateRoom = async () => {
+        if (!selectedMovie) return;
+
         if (rooms.length >= MAX_ROOMS) {
             setError(`Bạn đã tạo tối đa ${MAX_ROOMS} phòng. Vui lòng xóa phòng cũ để tạo phòng mới.`);
             return;
@@ -102,7 +135,10 @@ export default function WatchTogetherPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ movieId: movie.slug })
+                body: JSON.stringify({
+                    movieId: selectedMovie.slug,
+                    roomName: roomName.trim() || `Phòng xem ${selectedMovie.name}`
+                })
             });
 
             const data = await res.json() as { roomId?: string; message?: string };
@@ -140,6 +176,14 @@ export default function WatchTogetherPage() {
         } finally {
             setDeletingRoom(null);
         }
+    };
+
+    const handleCancelCreate = () => {
+        setIsCreating(false);
+        setSelectedMovie(null);
+        setRoomName('');
+        setSearchQuery('');
+        setSearchResults([]);
     };
 
     const formatTime = (timestamp: number) => {
@@ -235,81 +279,139 @@ export default function WatchTogetherPage() {
                 {isCreating && (
                     <div className="mb-8 p-6 bg-slate-800/50 rounded-xl border border-slate-700">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-semibold text-white">Tạo phòng mới</h2>
-                            <button
-                                onClick={() => {
-                                    setIsCreating(false);
-                                    setSearchQuery('');
-                                    setSearchResults([]);
-                                }}
-                                className="text-gray-400 hover:text-white"
-                            >
+                            <h2 className="text-xl font-semibold text-white">
+                                {selectedMovie ? 'Đặt tên phòng' : 'Chọn phim để xem chung'}
+                            </h2>
+                            <button onClick={handleCancelCreate} className="text-gray-400 hover:text-white">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        {/* Search input */}
-                        <div className="relative mb-4">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Tìm phim để xem chung..."
-                                className="w-full pl-12 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
-                                autoFocus
-                            />
-                            {isSearching && (
-                                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 animate-spin" />
-                            )}
-                        </div>
+                        {!selectedMovie ? (
+                            <>
+                                {/* Search input */}
+                                <div className="relative mb-4">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Tìm phim để xem chung..."
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
+                                        autoFocus
+                                    />
+                                    {isSearching && (
+                                        <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 animate-spin" />
+                                    )}
+                                </div>
 
-                        {/* Search results */}
-                        {searchQuery.length >= 2 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {searchResults.length === 0 && !isSearching ? (
-                                    <p className="col-span-full text-gray-400 text-center py-8">
-                                        Không tìm thấy phim "{searchQuery}"
-                                    </p>
-                                ) : (
-                                    searchResults.map((movie) => (
-                                        <button
-                                            key={movie.slug}
-                                            onClick={() => handleCreateRoom(movie)}
-                                            disabled={creatingRoom}
-                                            className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors text-left disabled:opacity-50"
-                                        >
-                                            <img
-                                                src={getOptimizedImageUrl(movie.poster_url || movie.thumb_url)}
-                                                alt={movie.name}
-                                                className="w-14 h-20 object-cover rounded"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-white font-medium truncate">
-                                                    {movie.name}
-                                                </p>
-                                                <p className="text-gray-400 text-sm truncate">
-                                                    {movie.origin_name}
-                                                </p>
-                                                <p className="text-gray-500 text-xs mt-1">
-                                                    {movie.year}
-                                                </p>
-                                            </div>
-                                            {creatingRoom ? (
-                                                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                                            ) : (
-                                                <Plus className="w-5 h-5 text-red-400" />
-                                            )}
-                                        </button>
-                                    ))
+                                {/* Search results */}
+                                {searchQuery.length >= 2 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {searchResults.length === 0 && !isSearching ? (
+                                            <p className="col-span-full text-gray-400 text-center py-8">
+                                                Không tìm thấy phim "{searchQuery}"
+                                            </p>
+                                        ) : (
+                                            searchResults.map((movie) => (
+                                                <button
+                                                    key={movie.slug}
+                                                    onClick={() => handleSelectMovie(movie)}
+                                                    className="flex items-center gap-3 p-3 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors text-left"
+                                                >
+                                                    <img
+                                                        src={getOptimizedImageUrl(movie.poster_url || movie.thumb_url)}
+                                                        alt={movie.name}
+                                                        className="w-14 h-20 object-cover rounded"
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-white font-medium truncate">
+                                                            {movie.name}
+                                                        </p>
+                                                        <p className="text-gray-400 text-sm truncate">
+                                                            {movie.origin_name}
+                                                        </p>
+                                                        <p className="text-gray-500 text-xs mt-1">
+                                                            {movie.year}
+                                                        </p>
+                                                    </div>
+                                                    <Plus className="w-5 h-5 text-red-400 shrink-0" />
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
                                 )}
-                            </div>
-                        )}
 
-                        {searchQuery.length < 2 && (
-                            <p className="text-gray-500 text-center py-8">
-                                Nhập tên phim để tìm kiếm
-                            </p>
+                                {searchQuery.length < 2 && (
+                                    <p className="text-gray-500 text-center py-8">
+                                        Nhập tên phim để tìm kiếm
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            /* Room name form after selecting movie */
+                            <div className="space-y-4">
+                                {/* Selected movie preview */}
+                                <div className="flex items-center gap-4 p-4 bg-slate-700/50 rounded-lg">
+                                    <img
+                                        src={getOptimizedImageUrl(selectedMovie.poster_url || selectedMovie.thumb_url)}
+                                        alt={selectedMovie.name}
+                                        className="w-16 h-24 object-cover rounded"
+                                    />
+                                    <div className="flex-1">
+                                        <p className="text-white font-medium">{selectedMovie.name}</p>
+                                        <p className="text-gray-400 text-sm">{selectedMovie.origin_name}</p>
+                                        <p className="text-gray-500 text-xs mt-1">{selectedMovie.year}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedMovie(null);
+                                            setRoomName('');
+                                        }}
+                                        className="text-gray-400 hover:text-white"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {/* Room name input */}
+                                <div>
+                                    <label className="block text-gray-300 text-sm mb-2">
+                                        <Edit3 className="w-4 h-4 inline mr-2" />
+                                        Tên phòng
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={roomName}
+                                        onChange={(e) => setRoomName(e.target.value)}
+                                        placeholder="Nhập tên phòng..."
+                                        className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500"
+                                        maxLength={100}
+                                    />
+                                </div>
+
+                                {/* Create button */}
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 border-slate-600"
+                                        onClick={() => {
+                                            setSelectedMovie(null);
+                                            setRoomName('');
+                                        }}
+                                    >
+                                        Chọn phim khác
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-red-600 hover:bg-red-700"
+                                        onClick={handleCreateRoom}
+                                        disabled={creatingRoom}
+                                        leftIcon={creatingRoom ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                                    >
+                                        {creatingRoom ? 'Đang tạo...' : 'Tạo phòng'}
+                                    </Button>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
@@ -343,20 +445,42 @@ export default function WatchTogetherPage() {
                         {rooms.map((room) => (
                             <div
                                 key={room.roomId}
-                                className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-slate-600 transition-colors"
+                                className="bg-slate-800/50 rounded-xl border border-slate-700 hover:border-slate-600 transition-colors overflow-hidden"
                             >
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-white font-medium truncate">
-                                            {room.movieId}
+                                {/* Room card with movie info */}
+                                <div className="flex gap-4 p-4">
+                                    {/* Movie poster */}
+                                    <div className="shrink-0">
+                                        {room.moviePoster ? (
+                                            <img
+                                                src={getOptimizedImageUrl(room.moviePoster)}
+                                                alt={room.movieName || room.movieId}
+                                                className="w-20 h-28 object-cover rounded-lg"
+                                            />
+                                        ) : (
+                                            <div className="w-20 h-28 bg-slate-700 rounded-lg flex items-center justify-center">
+                                                <Film className="w-8 h-8 text-gray-500" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Room info */}
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-white font-semibold truncate mb-1">
+                                            {room.roomName}
+                                        </h3>
+                                        <p className="text-gray-400 text-sm truncate">
+                                            {room.movieName || room.movieId}
                                         </p>
-                                        <p className="text-gray-500 text-sm">
-                                            {formatTime(room.createdAt)}
-                                        </p>
+                                        <div className="flex items-center gap-1 text-gray-500 text-xs mt-2">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            <span>{formatTime(room.createdAt)}</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2">
+                                {/* Action buttons */}
+                                <div className="flex gap-2 p-4 pt-0">
                                     <Button
                                         size="sm"
                                         className="flex-1 bg-red-600 hover:bg-red-700"

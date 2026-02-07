@@ -50,6 +50,7 @@ interface RoomRow {
     room_id: string;
     owner_id: string;
     movie_id: string;
+    room_name: string | null;
     created_at: number;
 }
 
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const { roomId } = await params;
 
         const room = await env.DB.prepare(
-            'SELECT room_id, owner_id, movie_id, created_at FROM rooms WHERE room_id = ?'
+            'SELECT room_id, owner_id, movie_id, room_name, created_at FROM rooms WHERE room_id = ?'
         )
             .bind(roomId)
             .first<RoomRow>();
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 ownerId: room.owner_id,
                 ownerUsername: owner?.username || 'Unknown',
                 movieId: room.movie_id,
+                roomName: room.room_name || `Phòng xem ${room.movie_id}`,
                 createdAt: room.created_at,
             }
         });

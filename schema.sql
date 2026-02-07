@@ -24,5 +24,6 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_id TEXT PRIMARY KEY,
   owner_id TEXT NOT NULL,
   movie_id TEXT NOT NULL,
+  room_name TEXT,
   created_at INTEGER NOT NULL
 );

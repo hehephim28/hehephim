@@ -59,6 +59,7 @@ function generateRoomId(): string {
 
 interface CreateRoomBody {
     movieId: string;
+    roomName?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json() as CreateRoomBody;
-        const { movieId } = body;
+        const { movieId, roomName } = body;
 
         if (!movieId) {
             return NextResponse.json(
@@ -110,11 +111,12 @@ export async function POST(request: NextRequest) {
 
         const roomId = generateRoomId();
         const createdAt = Date.now();
+        const finalRoomName = roomName?.trim() || `Phòng xem ${movieId}`;
 
         await env.DB.prepare(
-            'INSERT INTO rooms (room_id, owner_id, movie_id, created_at) VALUES (?, ?, ?, ?)'
+            'INSERT INTO rooms (room_id, owner_id, movie_id, room_name, created_at) VALUES (?, ?, ?, ?, ?)'
         )
-            .bind(roomId, payload.userId, movieId, createdAt)
+            .bind(roomId, payload.userId, movieId, finalRoomName, createdAt)
             .run();
 
         return NextResponse.json({
@@ -134,6 +136,7 @@ export async function POST(request: NextRequest) {
 interface RoomRow {
     room_id: string;
     movie_id: string;
+    room_name: string | null;
     created_at: number;
 }
 
@@ -161,7 +164,7 @@ export async function GET(request: NextRequest) {
         }
 
         const { results } = await env.DB.prepare(
-            'SELECT room_id, movie_id, created_at FROM rooms WHERE owner_id = ? ORDER BY created_at DESC LIMIT 20'
+            'SELECT room_id, movie_id, room_name, created_at FROM rooms WHERE owner_id = ? ORDER BY created_at DESC LIMIT 20'
         )
             .bind(payload.userId)
             .all<RoomRow>();
@@ -169,6 +172,7 @@ export async function GET(request: NextRequest) {
         const rooms = (results || []).map((row: RoomRow) => ({
             roomId: row.room_id,
             movieId: row.movie_id,
+            roomName: row.room_name || `Phòng xem ${row.movie_id}`,
             createdAt: row.created_at
         }));
 
