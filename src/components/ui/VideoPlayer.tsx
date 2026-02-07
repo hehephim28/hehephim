@@ -38,6 +38,8 @@ interface VideoPlayerProps {
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   /** Called when play state changes */
   onPlayStateChange?: (isPlaying: boolean) => void;
+  /** Called when user seeks (drags progress bar to a new position) */
+  onSeek?: (newTime: number) => void;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
@@ -49,6 +51,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
   className,
   onTimeUpdate,
   onPlayStateChange,
+  onSeek,
 }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -550,6 +553,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
         const video = videoRef.current;
         if (video) {
           setCurrentTime(video.currentTime);
+          // Notify parent that user seeked to a new position
+          onSeek?.(video.currentTime);
         }
       }
     };

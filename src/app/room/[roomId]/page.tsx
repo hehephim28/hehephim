@@ -193,6 +193,24 @@ export default function WatchPartyRoomPage() {
         // We'll send seek on significant jumps (detected in VideoPlayer)
     }, [isOwner, roomInfo]);
 
+    // HOST: Send seek command when player seeks via progress bar drag
+    const handlePlayerSeek = useCallback((newTime: number) => {
+        // Ignore if this is triggered by a server update
+        if (isServerUpdateRef.current) return;
+        // Only host can control
+        if (!isOwner || !roomInfo) return;
+
+        console.log('[HOST] Player seeked to:', newTime);
+
+        // Send SEEK command to DO
+        fetch(`/room/${roomId}/seek`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ position: newTime }),
+        }).catch(console.error);
+    }, [isOwner, roomId, roomInfo]);
+
     // SYNC button: Fetch server state and apply to player
     const handleSync = async () => {
         setSyncStatus('syncing');
@@ -329,6 +347,7 @@ export default function WatchPartyRoomPage() {
                                         className="w-full"
                                         onPlayStateChange={handlePlayerPlay}
                                         onTimeUpdate={handlePlayerTimeUpdate}
+                                        onSeek={handlePlayerSeek}
                                     />
                                 ) : (
                                     <div className="w-full aspect-video flex items-center justify-center text-gray-500 bg-slate-900">
