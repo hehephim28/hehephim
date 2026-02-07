@@ -63,30 +63,6 @@ export class RoomDO {
     }
 
     /**
-     * CORS headers for cross-origin requests
-     */
-    private corsHeaders(): HeadersInit {
-        return {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-        };
-    }
-
-    /**
-     * JSON response with CORS headers
-     */
-    private jsonResponse(data: unknown, status = 200): Response {
-        return new Response(JSON.stringify(data), {
-            status,
-            headers: {
-                'Content-Type': 'application/json',
-                ...this.corsHeaders(),
-            },
-        });
-    }
-
-    /**
      * Broadcast message to all connected clients
      */
     private broadcast(obj: BroadcastMessage): void {
@@ -315,7 +291,7 @@ export class RoomDO {
      */
     private async handleGetChat(): Promise<Response> {
         const messages = await this.state.storage.get<ChatMessage[]>('chat') ?? [];
-        return this.jsonResponse({ messages: messages.slice(-100) });
+        return Response.json({ messages: messages.slice(-100) });
     }
 
     /**
