@@ -53,12 +53,8 @@ function rewriteM3u8Content(content: string, baseUrl: string, proxyBaseUrl: stri
         // If it's a URL (segment file or playlist)
         if (trimmed.endsWith('.ts') || trimmed.endsWith('.m3u8') || trimmed.includes('.ts?') || trimmed.includes('.m3u8?')) {
             const absoluteUrl = trimmed.startsWith('http') ? trimmed : `${baseUrlWithPath}${trimmed}`;
-            // For .ts segments, return absolute URL directly (browsers can fetch these)
-            // For .m3u8 (nested playlists), proxy them too
-            if (trimmed.endsWith('.m3u8') || trimmed.includes('.m3u8?')) {
-                return `${proxyBaseUrl}?url=${encodeURIComponent(absoluteUrl)}`;
-            }
-            return absoluteUrl;
+            // Proxy ALL URLs including .ts segments (some servers block cross-origin requests)
+            return `${proxyBaseUrl}?url=${encodeURIComponent(absoluteUrl)}`;
         }
 
         return line;
@@ -98,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Fetch the M3U8 content
+        // Fetch the content
         const response = await fetch(decodedUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -115,13 +111,20 @@ export async function GET(request: NextRequest) {
         }
 
         const contentType = response.headers.get('content-type') || '';
-        const content = await response.text();
 
-        // Build the proxy base URL for rewriting
-        const proxyBaseUrl = `${request.nextUrl.origin}/api/proxy/m3u8`;
+        // Check if it's an M3U8 playlist
+        const isM3u8 = contentType.includes('mpegurl') ||
+            contentType.includes('m3u8') ||
+            decodedUrl.endsWith('.m3u8') ||
+            decodedUrl.includes('.m3u8?');
 
-        // If it's an M3U8 playlist, rewrite the URLs inside
-        if (contentType.includes('mpegurl') || contentType.includes('m3u8') || decodedUrl.includes('.m3u8')) {
+        // Check if it's a .ts segment (binary)
+        const isTS = decodedUrl.endsWith('.ts') || decodedUrl.includes('.ts?');
+
+        if (isM3u8) {
+            // M3U8 playlists: read as text and rewrite URLs
+            const content = await response.text();
+            const proxyBaseUrl = `${request.nextUrl.origin}/api/proxy/m3u8`;
             const rewrittenContent = rewriteM3u8Content(content, decodedUrl, proxyBaseUrl);
 
             return new NextResponse(rewrittenContent, {
@@ -134,7 +137,22 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // For other content (like .ts segments), return as-is with CORS headers
+        if (isTS) {
+            // TS segments: read as binary and stream directly
+            const buffer = await response.arrayBuffer();
+
+            return new NextResponse(buffer, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'video/mp2t',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=3600',
+                },
+            });
+        }
+
+        // For other content, return as-is
+        const content = await response.text();
         return new NextResponse(content, {
             status: 200,
             headers: {
