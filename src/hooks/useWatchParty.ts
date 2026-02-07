@@ -62,7 +62,7 @@ export function useWatchParty({
 
     // Function to close WebSocket
     const closeWebSocket = useCallback(() => {
-        console.log('closeWebSocket called');
+        console.log('[WS] closeWebSocket called');
         isUnmountedRef.current = true;
 
         if (reconnectTimeoutRef.current) {
@@ -79,7 +79,7 @@ export function useWatchParty({
     // Close WebSocket when navigating away from room page
     useEffect(() => {
         if (!pathname.startsWith(currentRoomPathRef.current)) {
-            console.log('Navigated away from room, closing WebSocket');
+            console.log('[WS] Navigated away from room, closing WebSocket');
             closeWebSocket();
         }
     }, [pathname, closeWebSocket]);
@@ -101,9 +101,10 @@ export function useWatchParty({
         isUnmountedRef.current = false;
 
         const connect = () => {
-            // Don't connect if unmounted or already connected
+            // Don't connect if unmounted or already connected/connecting
             if (isUnmountedRef.current) return;
-            if (wsRef.current?.readyState === WebSocket.OPEN) return;
+            const readyState = wsRef.current?.readyState;
+            if (readyState === WebSocket.OPEN || readyState === WebSocket.CONNECTING) return;
 
             // Close existing connection if any
             if (wsRef.current) {
@@ -114,17 +115,18 @@ export function useWatchParty({
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${DO_WORKER_URL}/room/${roomId}/ws`;
 
-            console.log('Connecting to WebSocket:', wsUrl);
+            console.log('[WS] Connecting to:', wsUrl);
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
 
             ws.onopen = () => {
                 if (isUnmountedRef.current) {
+                    console.log('[WS] Connected but unmounted, closing');
                     ws.close();
                     return;
                 }
+                console.log('[WS] Connected');
                 setIsConnected(true);
-                console.log('WebSocket connected');
             };
 
             ws.onmessage = (event) => {
@@ -171,11 +173,12 @@ export function useWatchParty({
             };
 
             ws.onclose = () => {
+                console.log('[WS] Disconnected, isUnmounted:', isUnmountedRef.current);
                 setIsConnected(false);
-                console.log('WebSocket disconnected');
 
                 // Only auto-reconnect if not unmounted
                 if (!isUnmountedRef.current) {
+                    console.log('[WS] Will reconnect in 3s');
                     reconnectTimeoutRef.current = setTimeout(() => {
                         connect();
                     }, 3000);
@@ -191,7 +194,7 @@ export function useWatchParty({
 
         // Cleanup function
         return () => {
-            console.log('useWatchParty cleanup - closing WebSocket');
+            console.log('[WS] useEffect cleanup');
             isUnmountedRef.current = true;
 
             if (reconnectTimeoutRef.current) {
