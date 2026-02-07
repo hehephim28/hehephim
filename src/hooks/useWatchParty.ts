@@ -172,7 +172,9 @@ export function useWatchParty({
                 }
             };
 
-            ws.onclose = () => {
+            ws.onclose = (event) => {
+                console.log('[WS] onclose fired, code:', event.code, 'reason:', event.reason);
+
                 // Only handle if this is still the current connection
                 if (wsRef.current !== ws) {
                     console.log('[WS] Old connection closed, ignoring');
