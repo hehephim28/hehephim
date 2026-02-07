@@ -141,25 +141,57 @@ export function useRecentlyViewed() {
   });
 }
 
+interface FavoriteItem {
+  movieId: string;
+  createdAt: number;
+}
+
 /**
  * Hook to add/remove movies from favorites (server API)
+ * Now properly syncs with server instead of relying on localStorage
  */
 export function useFavorites() {
   const queryClient = useQueryClient();
 
-  // Get local favorites cache (for optimistic UI)
-  const getLocalFavorites = () => {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem('favorites');
-    return stored ? JSON.parse(stored) : [];
-  };
+  // Query to fetch favorites from server
+  const favoritesQuery = useQuery({
+    queryKey: ['favorites'],
+    queryFn: async () => {
+      const response = await fetch('/api/favorites', {
+        credentials: 'include',
+      });
 
-  // Sync local cache
-  const setLocalFavorites = (slugs: string[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('favorites', JSON.stringify(slugs));
-    }
-  };
+      if (!response.ok) {
+        // User might not be authenticated - return empty array
+        if (response.status === 401) {
+          return { slugs: [] as string[], movies: [] as MovieDetailResponse['movie'][] };
+        }
+        throw new Error('Failed to fetch favorites');
+      }
+
+      const data = await response.json() as { favorites: FavoriteItem[] };
+      const slugs = (data.favorites || []).map(f => f.movieId);
+
+      // Fetch movie details for all favorites
+      if (slugs.length === 0) {
+        return { slugs: [], movies: [] };
+      }
+
+      const movieDetails = await Promise.allSettled(
+        slugs.map((slug: string) => movieService.getMovieDetails(slug))
+      );
+
+      const movies = movieDetails
+        .filter((result): result is PromiseFulfilledResult<MovieDetailResponse> =>
+          result.status === 'fulfilled'
+        )
+        .map(result => result.value.movie);
+
+      return { slugs, movies };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
 
   const addToFavorites = useMutation({
     mutationFn: async (slug: string) => {
@@ -172,13 +204,6 @@ export function useFavorites() {
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Không thể thêm vào yêu thích');
-      }
-
-      // Update local cache
-      const favorites = getLocalFavorites();
-      if (!favorites.includes(slug)) {
-        favorites.push(slug);
-        setLocalFavorites(favorites);
       }
 
       return await response.json();
@@ -204,11 +229,6 @@ export function useFavorites() {
         throw new Error(error.message || 'Không thể xóa khỏi yêu thích');
       }
 
-      // Update local cache
-      const favorites = getLocalFavorites();
-      const updated = favorites.filter((s: string) => s !== slug);
-      setLocalFavorites(updated);
-
       return await response.json();
     },
     onSuccess: () => {
@@ -219,31 +239,15 @@ export function useFavorites() {
     },
   });
 
-  const favoritesQuery = useQuery({
-    queryKey: ['favorites'],
-    queryFn: async () => {
-      const slugs = getLocalFavorites();
-      if (slugs.length === 0) return [];
-
-      const movieDetails = await Promise.allSettled(
-        slugs.map((slug: string) => movieService.getMovieDetails(slug))
-      );
-
-      return movieDetails
-        .filter((result): result is PromiseFulfilledResult<MovieDetailResponse> =>
-          result.status === 'fulfilled'
-        )
-        .map(result => result.value.movie);
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-
+  // Check if a movie is in favorites using server data
   const isFavorite = (slug: string) => {
-    return getLocalFavorites().includes(slug);
+    const slugs = favoritesQuery.data?.slugs || [];
+    return slugs.includes(slug);
   };
 
   return {
-    favorites: favoritesQuery.data || [],
+    favorites: favoritesQuery.data?.movies || [],
+    favoriteSlugs: favoritesQuery.data?.slugs || [],
     isLoading: favoritesQuery.isLoading,
     addToFavorites,
     removeFromFavorites,
