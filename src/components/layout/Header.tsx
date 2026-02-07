@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown, Search, User, LogOut, Heart, Users2 } from 'lucide-react';
 import { Button } from '../ui';
-import { HeaderSearchBar, WatchTogetherDropdown } from '../features';
+import { HeaderSearchBar } from '../features';
 import { AuthModal } from '../ui/AuthModal';
 import { useNavigationMetadata } from '../../hooks/useMetadata';
 import { useAuth } from '../../contexts/AuthContext';
@@ -281,10 +281,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
             </div>
           )}
 
-          {/* Watch Together Dropdown - Desktop */}
-          <div className="hidden md:block ml-4">
-            <WatchTogetherDropdown onAuthClick={() => setAuthModalOpen(true)} />
-          </div>
+          {/* Watch Together Link - Desktop */}
+          <Link
+            href="/xem-chung"
+            className="hidden md:flex items-center gap-2 ml-4 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <Users2 className="w-5 h-5" />
+            <span className="hidden lg:inline">Xem chung</span>
+          </Link>
 
           {/* Mobile Search Button - Right side with more margin */}
           {!hideSearchBar && (
@@ -499,12 +503,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                       </Link>
 
                       {/* Watch Together - Mobile */}
-                      <div className="py-2">
-                        <WatchTogetherDropdown onAuthClick={() => {
-                          setIsMenuOpen(false);
-                          setAuthModalOpen(true);
-                        }} />
-                      </div>
+                      <Link
+                        href="/xem-chung"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-2 py-2 text-slate-300 hover:text-red-400 transition-colors"
+                      >
+                        <Users2 className="w-5 h-5" />
+                        Xem chung
+                      </Link>
 
                       {/* Logout Button */}
                       <button

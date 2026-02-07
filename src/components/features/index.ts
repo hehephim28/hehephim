@@ -8,4 +8,4 @@ export { EnhancedSearchBar, type EnhancedSearchBarProps } from './EnhancedSearch
 export { EnhancedSearchSuggestions, type SuggestionData } from './EnhancedSearchSuggestions';
 export { MovieSection, type MovieSectionProps } from './MovieSection';
 export { HeroSection } from './HeroSection';
-export { WatchTogetherDropdown } from './WatchTogetherDropdown';
+

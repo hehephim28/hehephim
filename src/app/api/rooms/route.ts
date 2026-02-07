@@ -94,6 +94,20 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Check room limit (max 10 rooms per user)
+        const countResult = await env.DB.prepare(
+            'SELECT COUNT(*) as count FROM rooms WHERE owner_id = ?'
+        )
+            .bind(payload.userId)
+            .first<{ count: number }>();
+
+        if (countResult && countResult.count >= 10) {
+            return NextResponse.json(
+                { error: 'Room limit reached', message: 'Bạn đã tạo tối đa 10 phòng. Vui lòng xóa phòng cũ để tạo phòng mới.' },
+                { status: 400 }
+            );
+        }
+
         const roomId = generateRoomId();
         const createdAt = Date.now();
 
