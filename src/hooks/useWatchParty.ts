@@ -173,11 +173,17 @@ export function useWatchParty({
             };
 
             ws.onclose = () => {
+                // Only handle if this is still the current connection
+                if (wsRef.current !== ws) {
+                    console.log('[WS] Old connection closed, ignoring');
+                    return;
+                }
+
                 console.log('[WS] Disconnected, isUnmounted:', isUnmountedRef.current);
                 setIsConnected(false);
 
-                // Only auto-reconnect if not unmounted
-                if (!isUnmountedRef.current) {
+                // Only auto-reconnect if not unmounted AND this is still current ws
+                if (!isUnmountedRef.current && wsRef.current === ws) {
                     console.log('[WS] Will reconnect in 3s');
                     reconnectTimeoutRef.current = setTimeout(() => {
                         connect();
