@@ -208,11 +208,36 @@ export function useFavorites() {
 
       return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    // Optimistic update - UI updates immediately
+    onMutate: async (slug: string) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['favorites'] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(['favorites']);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['favorites'], (old: any) => {
+        if (!old) return { slugs: [slug], movies: [] };
+        return {
+          ...old,
+          slugs: [...old.slugs, slug],
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousData };
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _slug, context) => {
       console.error('[Favorites] Add error:', error.message);
+      // Rollback to the previous value on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['favorites'], context.previousData);
+      }
+    },
+    onSettled: () => {
+      // Refetch after mutation to sync with server
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
   });
 
@@ -231,11 +256,32 @@ export function useFavorites() {
 
       return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    // Optimistic update - UI updates immediately
+    onMutate: async (slug: string) => {
+      await queryClient.cancelQueries({ queryKey: ['favorites'] });
+
+      const previousData = queryClient.getQueryData(['favorites']);
+
+      // Optimistically remove from the list
+      queryClient.setQueryData(['favorites'], (old: any) => {
+        if (!old) return { slugs: [], movies: [] };
+        return {
+          ...old,
+          slugs: old.slugs.filter((s: string) => s !== slug),
+          movies: old.movies.filter((m: any) => m.slug !== slug),
+        };
+      });
+
+      return { previousData };
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _slug, context) => {
       console.error('[Favorites] Remove error:', error.message);
+      if (context?.previousData) {
+        queryClient.setQueryData(['favorites'], context.previousData);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
   });
 
