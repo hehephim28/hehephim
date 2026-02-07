@@ -75,8 +75,15 @@ export default function WatchPartyRoomPage() {
         setTimeout(() => { isServerUpdateRef.current = false; }, 500);
     }, []);
 
-    const handleServerStateChange = useCallback((state: { serverTime: number; isPlaying: boolean }) => {
+    const handleServerStateChange = useCallback((state: { serverTime: number; isPlaying: boolean; movieId?: string | null }) => {
         console.log('[WS] Server STATE:', state);
+
+        // Ignore empty initial state (serverTime: 0 and no movieId means room is not initialized)
+        if (state.serverTime === 0 && !state.movieId) {
+            console.log('[WS] Ignoring empty initial state');
+            return;
+        }
+
         isServerUpdateRef.current = true;
         if (playerRef.current) {
             playerRef.current.setCurrentTime(state.serverTime);
@@ -324,7 +331,7 @@ export default function WatchPartyRoomPage() {
                                     <div className="flex items-center gap-3">
                                         {isOwner ? (
                                             <span className="px-3 py-1.5 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 rounded-full text-sm font-medium flex items-center gap-1.5 border border-yellow-500/30">
-                                                <span className="text-lg">👑</span> Chủ phòng - Điều khiển player để đồng bộ
+                                                <span className="text-lg"></span> Chủ phòng
                                             </span>
                                         ) : (
                                             <span className="px-3 py-1.5 bg-slate-700/50 text-gray-400 rounded-full text-sm flex items-center gap-2">
