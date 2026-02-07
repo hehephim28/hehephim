@@ -115,6 +115,10 @@ export default function WatchPartyRoomPage() {
                 setRoomInfo(roomData.room);
 
                 const movieData = await movieService.getMovieDetails(roomData.room.movieId);
+                console.log('[DEBUG] Movie data:', movieData);
+                console.log('[DEBUG] Episodes:', movieData.episodes);
+                console.log('[DEBUG] M3U8 URL:', movieData.episodes?.[0]?.server_data?.[0]?.link_m3u8);
+
                 setMovie(movieData.movie);
                 setEpisodes(movieData.episodes || []);
             } catch (e: any) {
