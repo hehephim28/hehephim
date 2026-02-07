@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface WatchPartyState {
     movieId: string | null;
@@ -46,16 +47,54 @@ export function useWatchParty({
     onPause,
     onSeek,
 }: UseWatchPartyOptions) {
+    const pathname = usePathname();
     const [isConnected, setIsConnected] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [state, setState] = useState<WatchPartyState | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isUnmountedRef = useRef(false);
+    const currentRoomPathRef = useRef(`/room/${roomId}`);
 
     // Store callbacks in refs to avoid recreating connect function
     const callbacksRef = useRef({ onStateChange, onPlay, onPause, onSeek });
     callbacksRef.current = { onStateChange, onPlay, onPause, onSeek };
+
+    // Function to close WebSocket
+    const closeWebSocket = useCallback(() => {
+        console.log('closeWebSocket called');
+        isUnmountedRef.current = true;
+
+        if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = null;
+        }
+
+        if (wsRef.current) {
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+    }, []);
+
+    // Close WebSocket when navigating away from room page
+    useEffect(() => {
+        if (!pathname.startsWith(currentRoomPathRef.current)) {
+            console.log('Navigated away from room, closing WebSocket');
+            closeWebSocket();
+        }
+    }, [pathname, closeWebSocket]);
+
+    // Close WebSocket on page unload/refresh
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            closeWebSocket();
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [closeWebSocket]);
 
     // Connect on mount, disconnect on unmount - only depends on roomId
     useEffect(() => {
