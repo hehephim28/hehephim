@@ -1,4 +1,5 @@
 /**
+ * GET /api/rooms - List user's rooms
  * POST /api/rooms - Create a new watch party room
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -111,6 +112,57 @@ export async function POST(request: NextRequest) {
         console.error('Create room error:', error);
         return NextResponse.json(
             { error: 'Server error', message: 'Đã xảy ra lỗi khi tạo phòng' },
+            { status: 500 }
+        );
+    }
+}
+
+interface RoomRow {
+    room_id: string;
+    movie_id: string;
+    created_at: number;
+}
+
+export async function GET(request: NextRequest) {
+    try {
+        const { env } = getRequestContext();
+
+        const cookies = request.headers.get('cookie') || '';
+        const tokenMatch = cookies.match(/auth_token=([^;]+)/);
+        const token = tokenMatch?.[1];
+
+        if (!token) {
+            return NextResponse.json(
+                { error: 'Not authenticated', message: 'Chưa đăng nhập' },
+                { status: 401 }
+            );
+        }
+
+        const payload = await verifyJWT(token, env.JWT_SECRET);
+        if (!payload || !payload.userId) {
+            return NextResponse.json(
+                { error: 'Invalid token', message: 'Phiên đăng nhập không hợp lệ' },
+                { status: 401 }
+            );
+        }
+
+        const { results } = await env.DB.prepare(
+            'SELECT room_id, movie_id, created_at FROM rooms WHERE owner_id = ? ORDER BY created_at DESC LIMIT 20'
+        )
+            .bind(payload.userId)
+            .all<RoomRow>();
+
+        const rooms = (results || []).map((row: RoomRow) => ({
+            roomId: row.room_id,
+            movieId: row.movie_id,
+            createdAt: row.created_at
+        }));
+
+        return NextResponse.json({ rooms });
+    } catch (error: any) {
+        console.error('Get rooms error:', error);
+        return NextResponse.json(
+            { error: 'Server error', message: 'Đã xảy ra lỗi' },
             { status: 500 }
         );
     }

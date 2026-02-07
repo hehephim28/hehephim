@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown, Search, User, LogOut, Heart } from 'lucide-react';
+import { Menu, X, ChevronDown, Search, User, LogOut, Heart, Users2 } from 'lucide-react';
 import { Button } from '../ui';
-import { HeaderSearchBar } from '../features';
+import { HeaderSearchBar, WatchTogetherDropdown } from '../features';
 import { AuthModal } from '../ui/AuthModal';
 import { useNavigationMetadata } from '../../hooks/useMetadata';
 import { useAuth } from '../../contexts/AuthContext';
@@ -281,6 +281,11 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
             </div>
           )}
 
+          {/* Watch Together Dropdown - Desktop */}
+          <div className="hidden md:block ml-4">
+            <WatchTogetherDropdown onAuthClick={() => setAuthModalOpen(true)} />
+          </div>
+
           {/* Mobile Search Button - Right side with more margin */}
           {!hideSearchBar && (
             <Button
@@ -492,6 +497,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                         <Heart className="w-5 h-5" />
                         Phim yêu thích
                       </Link>
+
+                      {/* Watch Together - Mobile */}
+                      <div className="py-2">
+                        <WatchTogetherDropdown onAuthClick={() => {
+                          setIsMenuOpen(false);
+                          setAuthModalOpen(true);
+                        }} />
+                      </div>
 
                       {/* Logout Button */}
                       <button
