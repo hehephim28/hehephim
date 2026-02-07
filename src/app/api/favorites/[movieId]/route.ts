@@ -96,7 +96,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
 
         await env.DB.prepare(
-            'INSERT INTO favorites (user_id, movie_id, added_at) VALUES (?, ?, ?)'
+            'INSERT INTO favorites (user_id, movie_id, created_at) VALUES (?, ?, ?)'
         )
             .bind(userId, movieId, Date.now())
             .run();
