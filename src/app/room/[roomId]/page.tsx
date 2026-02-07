@@ -228,12 +228,17 @@ export default function WatchPartyRoomPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // Get M3U8 URL from selected episode
+    // Get video URLs from selected episode
     const currentServer = episodes[selectedServer];
     const currentEpisodeData = currentServer?.server_data?.[selectedEpisode];
     const m3u8Url = currentEpisodeData?.link_m3u8;
     const episodeName = currentEpisodeData?.name || 'Tập 1';
     const hasMultipleEpisodes = (currentServer?.server_data?.length || 0) > 1 || episodes.length > 1;
+
+    // Create proxied M3U8 URL to bypass CORS
+    const proxiedM3u8Url = m3u8Url
+        ? `/api/proxy/m3u8?url=${encodeURIComponent(m3u8Url)}`
+        : undefined;
 
     if (loading) {
         return (
@@ -310,10 +315,10 @@ export default function WatchPartyRoomPage() {
                         <div className="lg:col-span-3 order-1">
                             {/* Player */}
                             <div className="bg-black rounded-2xl overflow-hidden shadow-2xl shadow-black/50 mb-4">
-                                {m3u8Url ? (
+                                {proxiedM3u8Url ? (
                                     <VideoPlayer
                                         ref={playerRef}
-                                        m3u8Url={m3u8Url}
+                                        m3u8Url={proxiedM3u8Url}
                                         title={movie?.name || 'Watch Party'}
                                         poster={movie?.poster_url}
                                         className="w-full"
@@ -324,8 +329,8 @@ export default function WatchPartyRoomPage() {
                                     <div className="w-full aspect-video flex items-center justify-center text-gray-500 bg-slate-900">
                                         <div className="text-center">
                                             <Tv className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                            <p>Không tìm thấy nguồn phát M3U8</p>
-                                            <p className="text-sm text-gray-600 mt-2">Tính năng xem chung chỉ hỗ trợ nguồn phát M3U8</p>
+                                            <p>Không tìm thấy nguồn video</p>
+                                            <p className="text-sm text-gray-600 mt-2">Phim này không có nguồn M3U8 khả dụng</p>
                                         </div>
                                     </div>
                                 )}
@@ -394,8 +399,8 @@ export default function WatchPartyRoomPage() {
                                                                 setSelectedEpisode(0);
                                                             }}
                                                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedServer === idx
-                                                                    ? 'bg-red-600 text-white'
-                                                                    : 'bg-slate-700/50 text-gray-400 hover:bg-slate-700 hover:text-white'
+                                                                ? 'bg-red-600 text-white'
+                                                                : 'bg-slate-700/50 text-gray-400 hover:bg-slate-700 hover:text-white'
                                                                 }`}
                                                         >
                                                             {ep.server_name}
@@ -414,8 +419,8 @@ export default function WatchPartyRoomPage() {
                                                             setShowEpisodes(false);
                                                         }}
                                                         className={`px-2 py-2 rounded-lg text-sm font-medium transition-all ${selectedEpisode === idx
-                                                                ? 'bg-red-600 text-white ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900'
-                                                                : 'bg-slate-700/50 text-gray-300 hover:bg-slate-700 hover:text-white'
+                                                            ? 'bg-red-600 text-white ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900'
+                                                            : 'bg-slate-700/50 text-gray-300 hover:bg-slate-700 hover:text-white'
                                                             }`}
                                                     >
                                                         {ep.name}
